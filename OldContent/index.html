@@ -112,17 +112,16 @@
     <p class="dev-warning">
        This is OLD Content from before, it may not be the original file.
     </p>
-    <a href="https://basicallydevyt.github.io/main/Channel"><button>Go to channel page</button></a>
+    <a href="https://basicallydevyt.github.io/main/"><button>Go back home</button></a>
 
     <div class="file-directory">
       <div id="directory-content">Loading files...</div>
     </div>
 
     <script>
-      // Change these to match your repository targets
       const USERNAME = 'basicallydevyt';
       const REPO = 'main';
-      const FOLDER_PATH = ''; // Leave blank for root folder directory layout
+      const FOLDER_PATH = 'OldContent'; 
 
       async function fetchFiles() {
         const container = document.getElementById('directory-content');
@@ -133,7 +132,6 @@
           if (!response.ok) throw new Error("Failed to load repo files");
           const files = await response.json();
 
-          // Categorized sorting boxes
           const categories = {
             images: [],
             audio: [],
@@ -142,13 +140,11 @@
             extra: []
           };
 
-          // File extension filters
           const imgExt = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'ico'];
           const audExt = ['mp3', 'wav', 'ogg', 'm4a'];
           const vidExt = ['mp4', 'webm', 'mov', 'avi'];
 
           files.forEach(file => {
-            // Ignore folder structures and index.html
             if (file.type !== 'file' || file.name.toLowerCase() === 'index.html') return;
 
             const ext = file.name.split('.').pop().toLowerCase();
@@ -166,7 +162,6 @@
             }
           });
 
-          // Render groups strictly in your designated order
           let htmlOutput = '';
 
           htmlOutput += renderCategory('Images', categories.images);
