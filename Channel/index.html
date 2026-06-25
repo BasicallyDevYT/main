@@ -103,7 +103,7 @@
   <body>
     <div class="audio-container">
         <button id="music-btn" onclick="toggleMusic()">🎵 Play Music</button>
-        <audio id="bg-music" src="https://github.com/BasicallyDevYT/main/blob/main/Channel/bgmusic.mp3" loop></audio>
+        <audio id="bg-music" src="bgmusic.mp3" loop></audio>
     </div>
 
     <h1>My channel</h1>
@@ -143,10 +143,10 @@
             const btn = document.getElementById('music-btn');
             if (audio.paused) {
                 audio.play();
-                btn.innerText = "⏸️ Pause Music";
+                btn.innerText = "Pause Music";
             } else {
                 audio.pause();
-                btn.innerText = "🎵 Play Music";
+                btn.innerText = "Play Music";
             }
         }
 
