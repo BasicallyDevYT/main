@@ -36,26 +36,6 @@
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
       }
 
-      .home-nav-container {
-        margin-top: 20px;
-        margin-bottom: 20px;
-      }
-
-      .home-nav-btn {
-        background-color: #ffffff;
-        color: #000000;
-        border: none;
-        padding: 10px 20px;
-        font-weight: bold;
-        border-radius: 4px;
-        cursor: pointer;
-        text-decoration: none;
-        transition: background-color 0.2s;
-      }
-      .home-nav-btn:hover {
-        background-color: #e0e0e0;
-      }
-
       .media-grid {
         display: flex;
         justify-content: center;
@@ -95,7 +75,7 @@
         color: white;
         padding: 2px 6px;
         font-weight: bold;
-        font-size: 11px;
+        font-size: 12px;
         border-radius: 4px;
         display: inline-block;
         margin-bottom: 10px;
@@ -114,6 +94,27 @@
         border: 1px dashed #444444;
         border-radius: 6px;
       }
+
+      /* RESTORED RED BUTTON STYLING */
+      button {
+        background-color: #ff0000;
+        color: #ffffff;
+        border: none;
+        padding: 12px 28px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 0px rgba(255, 0, 0, 0);
+        margin-bottom: 20px;
+      }
+
+      button:hover {
+        background-color: #ff3333;
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
+      }
     </style>
   </head>
   <body>
@@ -126,9 +127,7 @@
     <h1>My channel</h1>
     <p>This is my page about my Youtube channel!</p>
     
-    <div class="home-nav-container">
-      <a href="https://basicallydevyt.github.io/main/" class="home-nav-btn">Go to back home</a>
-    </div>
+    <a href="https://basicallydevyt.github.io/main/"><button>Go to back home</button></a>
 
     <div class="media-grid">
         <div class="card" id="recent-video-card">
@@ -169,7 +168,6 @@
             }
         }
 
-        // Safe loader implementation avoiding script errors
         window.addEventListener('DOMContentLoaded', () => {
             const audio = document.getElementById('bg-music');
             const btn = document.getElementById('music-btn');
@@ -224,7 +222,7 @@
                 let foundShort = false;
                 if (data.items && data.items.length > 0) {
                     for (let item of data.items) {
-                        if (item.snippet.title.toLowerCase().includes('#shorts') || item.snippet.description.toLowerCase().includes('#shorts')) {
+                        if (item.snippet && (item.snippet.title.toLowerCase().includes('#shorts') || item.snippet.description.toLowerCase().includes('#shorts'))) {
                             shortDiv.innerHTML = `
                                 <a href="https://www.youtube.com/shorts/${item.id.videoId}" target="_blank" style="text-decoration: none; color: inherit;">
                                     <img src="${item.snippet.thumbnails.medium.url}" alt="${item.snippet.title}">
@@ -256,7 +254,7 @@
                 if (response.status === 403) return showRecentError("API Error 1: Permission Denied");
                 if (!response.ok) return showRecentError("API Error 2: Connection Failed");
                 const data = await response.json();
-                if (data.items && data.items.length > 0) {
+                if (data.items && data.items.length > 0 && data.items[0].snippet) {
                     const item = data.items[0].snippet;
                     streamDiv.innerHTML = `
                         <a href="https://www.youtube.com/watch?v=${data.items[0].id.videoId}" target="_blank" style="text-decoration: none; color: inherit;">
@@ -287,7 +285,7 @@
                 if (response.status === 403) { streamDiv.innerHTML = '<h3>API Error 1: Permission Denied</h3>'; return; }
                 if (!response.ok) { streamDiv.innerHTML = '<h3>API Error 2: Connection Failed</h3>'; return; }
                 const data = await response.json();
-                if (data.items && data.items.length > 0) {
+                if (data.items && data.items.length > 0 && data.items[0].snippet) {
                     badge.innerText = "🔴 LIVE NOW";
                     badge.className = "badge"; 
                     streamDiv.innerHTML = `
