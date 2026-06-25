@@ -118,48 +118,55 @@
       <div id="directory-content">Loading files...</div>
     </div>
 
-    <script>
+<script>
       const USERNAME = 'basicallydevyt';
       const REPO = 'main';
       const FOLDER_PATH = 'OldContent'; 
-      const CACHE_KEY = 'old_content_cache';
-      const CACHE_TIME_KEY = 'old_content_cache_time';
-      const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes cache
+      const CACHE_KEY = 'old_content_cache_v2';
+      const ETAG_KEY = 'old_content_etag';
 
       async function fetchFiles() {
         const container = document.getElementById('directory-content');
         const url = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FOLDER_PATH}`;
 
-        // Try checking for a valid local cache first to save API points
         const cachedData = localStorage.getItem(CACHE_KEY);
-        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-        const isCacheValid = cachedTime && (Date.now() - cachedTime < CACHE_DURATION);
+        const cachedEtag = localStorage.getItem(ETAG_KEY);
 
-        if (cachedData && isCacheValid) {
-          console.log("Loading directory contents via cached data store.");
-          processAndRenderFiles(JSON.parse(cachedData));
-          return;
+        // Set up headers to ask GitHub if the folder actually changed
+        const headers = {};
+        if (cachedData && cachedEtag) {
+          headers['If-None-Match'] = cachedEtag;
         }
 
         try {
-          const response = await fetch(url);
+          const response = await fetch(url, { headers });
+
+          // 304 means NOT MODIFIED. Safe to use cache, zero rate-limit penalty!
+          if (response.status === 304 && cachedData) {
+            console.log("No changes detected on GitHub. Loading from cache.");
+            processAndRenderFiles(JSON.parse(cachedData));
+            return;
+          }
           
           if (response.status === 403) {
-            // If GitHub cuts us off, check if we have ANY expired cache to show as a fallback instead of a broken page
             if (cachedData) {
-              console.warn("API Rate limited. Using stale fallback cache.");
+              console.warn("API Rate limited. Displaying cached backup.");
               processAndRenderFiles(JSON.parse(cachedData));
               return;
             }
-            throw new Error("GitHub API Rate Limit Exceeded. Try again in a bit.");
+            throw new Error("GitHub API Rate Limit Exceeded.");
           }
           
           if (!response.ok) throw new Error("Failed to load repo files");
+          
           const files = await response.json();
+          const newEtag = response.headers.get('ETag');
 
-          // Save to temporary local storage cache
+          // Save the fresh files and the new version fingerprint
           localStorage.setItem(CACHE_KEY, JSON.stringify(files));
-          localStorage.setItem(CACHE_TIME_KEY, Date.now());
+          if (newEtag) {
+            localStorage.setItem(ETAG_KEY, newEtag);
+          }
 
           processAndRenderFiles(files);
 
