@@ -122,59 +122,92 @@
       const USERNAME = 'basicallydevyt';
       const REPO = 'main';
       const FOLDER_PATH = 'OldContent'; 
+      const CACHE_KEY = 'old_content_cache';
+      const CACHE_TIME_KEY = 'old_content_cache_time';
+      const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes cache
 
       async function fetchFiles() {
         const container = document.getElementById('directory-content');
         const url = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FOLDER_PATH}`;
 
+        // Try checking for a valid local cache first to save API points
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+        const isCacheValid = cachedTime && (Date.now() - cachedTime < CACHE_DURATION);
+
+        if (cachedData && isCacheValid) {
+          console.log("Loading directory contents via cached data store.");
+          processAndRenderFiles(JSON.parse(cachedData));
+          return;
+        }
+
         try {
           const response = await fetch(url);
+          
+          if (response.status === 403) {
+            // If GitHub cuts us off, check if we have ANY expired cache to show as a fallback instead of a broken page
+            if (cachedData) {
+              console.warn("API Rate limited. Using stale fallback cache.");
+              processAndRenderFiles(JSON.parse(cachedData));
+              return;
+            }
+            throw new Error("GitHub API Rate Limit Exceeded. Try again in a bit.");
+          }
+          
           if (!response.ok) throw new Error("Failed to load repo files");
           const files = await response.json();
 
-          const categories = {
-            images: [],
-            audio: [],
-            videos: [],
-            gifs: [],
-            extra: []
-          };
+          // Save to temporary local storage cache
+          localStorage.setItem(CACHE_KEY, JSON.stringify(files));
+          localStorage.setItem(CACHE_TIME_KEY, Date.now());
 
-          const imgExt = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'ico'];
-          const audExt = ['mp3', 'wav', 'ogg', 'm4a'];
-          const vidExt = ['mp4', 'webm', 'mov', 'avi'];
-
-          files.forEach(file => {
-            if (file.type !== 'file' || file.name.toLowerCase() === 'index.html') return;
-
-            const ext = file.name.split('.').pop().toLowerCase();
-
-            if (ext === 'gif') {
-              categories.gifs.push(file);
-            } else if (imgExt.includes(ext)) {
-              categories.images.push(file);
-            } else if (audExt.includes(ext)) {
-              categories.audio.push(file);
-            } else if (vidExt.includes(ext)) {
-              categories.videos.push(file);
-            } else {
-              categories.extra.push(file);
-            }
-          });
-
-          let htmlOutput = '';
-
-          htmlOutput += renderCategory('Images', categories.images);
-          htmlOutput += renderCategory('Audio', categories.audio);
-          htmlOutput += renderCategory('Videos', categories.videos);
-          htmlOutput += renderCategory('Gif', categories.gifs);
-          htmlOutput += renderCategory('Extra Files', categories.extra);
-
-          container.innerHTML = htmlOutput;
+          processAndRenderFiles(files);
 
         } catch (err) {
           container.innerHTML = `<p style="color:#ff4d4d;">Error loading files: ${err.message}</p>`;
         }
+      }
+
+      function processAndRenderFiles(files) {
+        const container = document.getElementById('directory-content');
+        const categories = {
+          images: [],
+          audio: [],
+          videos: [],
+          gifs: [],
+          extra: []
+        };
+
+        const imgExt = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'ico'];
+        const audExt = ['mp3', 'wav', 'ogg', 'm4a'];
+        const vidExt = ['mp4', 'webm', 'mov', 'avi'];
+
+        files.forEach(file => {
+          if (file.type !== 'file' || file.name.toLowerCase() === 'index.html') return;
+
+          const ext = file.name.split('.').pop().toLowerCase();
+
+          if (ext === 'gif') {
+            categories.gifs.push(file);
+          } else if (imgExt.includes(ext)) {
+            categories.images.push(file);
+          } else if (audExt.includes(ext)) {
+            categories.audio.push(file);
+          } else if (vidExt.includes(ext)) {
+            categories.videos.push(file);
+          } else {
+            categories.extra.push(file);
+          }
+        });
+
+        let htmlOutput = '';
+        htmlOutput += renderCategory('Images', categories.images);
+        htmlOutput += renderCategory('Audio', categories.audio);
+        htmlOutput += renderCategory('Videos', categories.videos);
+        htmlOutput += renderCategory('Gif', categories.gifs);
+        htmlOutput += renderCategory('Extra Files', categories.extra);
+
+        container.innerHTML = htmlOutput;
       }
 
       function renderCategory(title, fileArray) {
