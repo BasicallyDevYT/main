@@ -102,7 +102,7 @@
   </head>
   <body>
     <div class="audio-container">
-        <button id="music-btn" onclick="toggleMusic()">🎵 Play Music</button>
+        <button id="music-btn" onclick="toggleMusic()">Stop music</button>
         <audio id="bg-music" src="./bgmusic.mp3" loop></audio>
     </div>
 
@@ -150,6 +150,8 @@
             }
         }
 
+        toggleMusic()
+        
         async function fetchLatestVideo() {
             const videoDiv = document.getElementById('video-content');
             const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=1&playlistId=${UPLOADS_PLAYLIST_ID}&key=${API_KEY}`;
