@@ -95,7 +95,6 @@
         border-radius: 6px;
       }
 
-      /* RESTORED RED BUTTON STYLING */
       button {
         background-color: #ff0000;
         color: #ffffff;
@@ -235,7 +234,7 @@
                 }
                 if (!foundShort) showShortError("No active shorts discovered");
             } catch (err) {
-                showShortError("API Error 3: Fetch exception");
+                shortDiv.showShortError("API Error 3: Fetch exception");
             }
         }
 
@@ -306,10 +305,21 @@
             }
         }
 
-        fetchLatestVideo();
-        fetchLatestShort();
-        fetchRecentStream();
-        fetchLiveStream();
+        // Helper function that adds a slight artificial breathing room (delay)
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        // Runs sequences staggered to stop hitting Google Cloud all in one instant
+        async function loadDashboardData() {
+            fetchLatestVideo();
+            await delay(400);  // 0.4 seconds pause
+            fetchLatestShort();
+            await delay(400);  
+            fetchRecentStream();
+            await delay(400);  
+            fetchLiveStream();
+        }
+
+        loadDashboardData();
     </script>
   </body>
 </html>
