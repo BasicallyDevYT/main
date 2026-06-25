@@ -34,6 +34,7 @@
         margin-bottom: 30px;
       }
 
+      /* Global base styles for ALL buttons */
       button {
         background-color: #ff0000;
         color: #ffffff;
@@ -47,6 +48,7 @@
         box-shadow: 0 0 0px rgba(255, 0, 0, 0);
       }
 
+      /* Default hover for standard red buttons */
       button:hover {
         background-color: #ff3333;
         transform: translateY(-2px);
@@ -55,6 +57,17 @@
 
       button:active {
         transform: translateY(1px);
+      }
+
+      /* TARGETED STYLES FOR ONLY THE DISCORD BUTTON */
+      button.discord-btn {
+        background-color: #5865F2; /* Discord Blurple */
+      }
+
+      /* Custom blue glow and color swap on hover */
+      button.discord-btn:hover {
+        background-color: #4752C4;
+        box-shadow: 0 0 15px #5865F2, 0 0 30px #5865F2;
       }
     </style>
   </head>
@@ -69,6 +82,8 @@
     <p class="dev-warning">
       The channel tab is broken so it has been temporarily removed.
     </p>
+    
+    <a href="https://basicallydevyt.github.io/main/TermsOfService"><button class="discord-btn">Discord Server Terms of Service</button></a>
     <a href="https://basicallydevyt.github.io/main/OldContent"><button>Go to Old Content page</button></a>
     <a href="https://github.com/BasicallyDevYT/main"><button>Github page</button></a>
     <script>
