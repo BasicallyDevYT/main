@@ -102,7 +102,7 @@
   </head>
   <body>
     <div class="audio-container">
-        <button id="music-btn" onclick="toggleMusic()">Stop music</button>
+        <button id="music-btn" onclick="toggleMusic()">Play Music</button>
         <audio id="bg-music" src="./bgmusic.mp3" loop></audio>
     </div>
 
@@ -134,9 +134,9 @@
     </div>
 
     <script>
-        const API_KEY = 'AIzaSyDl7_5Yum1o0Gru_UBdZH2S1B4bCnit-ag'; // dumbass i made it so only basically_dev can use it, enjoy suffering
-        const CHANNEL_ID = 'UCl-kI-6ma1msmRe9Ti0CHtA'; // don't care, redirects to my channel
-        const UPLOADS_PLAYLIST_ID = 'UUl-kI-6ma1msmRe9Ti0CHtA';  // same thing
+        const API_KEY = 'AIzaSyDl7_5Yum1o0Gru_UBdZH2S1B4bCnit-ag'; 
+        const CHANNEL_ID = 'UCl-kI-6ma1msmRe9Ti0CHtA'; 
+        const UPLOADS_PLAYLIST_ID = 'UUl-kI-6ma1msmRe9Ti0CHtA';  
 
         function toggleMusic() {
             const audio = document.getElementById('bg-music');
@@ -150,8 +150,21 @@
             }
         }
 
-        audio.play();
-        btn.innerText = "Pause Music";
+        // Properly handles trying to trigger the music setup when the page finishes loading
+        window.addEventListener('DOMContentLoaded', () => {
+            const audio = document.getElementById('bg-music');
+            const btn = document.getElementById('music-btn');
+            
+            // Try to play immediately
+            audio.play().then(() => {
+                // If browser allows autoplay, update button state
+                btn.innerText = "Pause Music";
+            }).catch((error) => {
+                // If browser blocks it, reset button layout to wait for user's click interaction
+                btn.innerText = "Play Music";
+                console.log("Autoplay was blocked by the browser. Waiting for user interaction.");
+            });
+        });
         
         async function fetchLatestVideo() {
             const videoDiv = document.getElementById('video-content');
