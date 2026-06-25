@@ -3,12 +3,155 @@
   <head>
     <meta charset="utf-8">
     <title>Basically_Dev's Website</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #1a1a1a;
+        color: #ffffff;
+        text-align: center;
+        padding: 20px;
+      }
+      
+      .media-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 30px;
+        margin-top: 40px;
+        flex-wrap: wrap; 
+      }
+
+      .card {
+        background-color: #262626;
+        border: 1px solid #444444;
+        border-radius: 8px;
+        padding: 15px;
+        width: 320px;
+        text-align: left;
+      }
+
+      .card img {
+        width: 100%;
+        border-radius: 6px;
+      }
+
+      .card h3 {
+        margin: 10px 0 5px 0;
+        font-size: 16px;
+        color: #ffffff;
+      }
+
+      .badge {
+        background-color: #ff0000;
+        color: white;
+        padding: 2px 6px;
+        font-weight: bold;
+        font-size: 12px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 10px;
+      }
+
+      .badge.offline {
+        background-color: #555555;
+      }
+
+      button {
+        padding: 10px 20px;
+        cursor: pointer;
+      }
+    </style>
   </head>
-  <body style="font-family: Arial;background-color: #1a1a1a;color: #ffffff;text-align: center;">
+  <body>
     <h1>My channel</h1>
-    <p>
-      This is my page about my Youtube channel!
-    </p>
+    <p>This is my page about my Youtube channel!</p>
+    
     <a href="https://basicallydevyt.github.io/main/"><button>Go to back home</button></a>
+
+    <div class="media-container">
+        
+        <div class="card" id="recent-video-card">
+            <div class="badge offline">LATEST VIDEO</div>
+            <div id="video-content">Loading latest video...</div>
+        </div>
+
+        <div class="card" id="live-stream-card">
+            <div id="stream-badge" class="badge offline">OFFLINE</div>
+            <div id="stream-content">Checking stream status...</div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyDl7_5Yum1o0Gru_UBdZH2S1B4bCnit-ag';
+        const CHANNEL_ID = 'UCl-kI-6ma1msmRe9Ti0CHtA';
+        const UPLOADS_PLAYLIST_ID = 'UUl-kI-6ma1msmRe9Ti0CHtA';
+
+        async function fetchLatestVideo() {
+            const videoUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=1&playlistId=${UPLOADS_PLAYLIST_ID}&key=${API_KEY}`;
+            try {
+                const response = await fetch(videoUrl);
+                const data = await response.json();
+                const videoDiv = document.getElementById('video-content');
+
+                if (data.items && data.items.length > 0) {
+                    const item = data.items[0].snippet;
+                    const id = item.resourceId.videoId;
+                    videoDiv.innerHTML = `
+                        <a href="https://www.youtube.com/watch?v=${id}" target="_blank">
+                            <img src="${item.thumbnails.medium.url}" alt="Video Thumbnail">
+                        </a>
+                        <h3>${item.title}</h3>
+                    `;
+                } else {
+                    videoDiv.innerHTML = '<p>No uploads found.</p>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('video-content').innerHTML = '<p>Error loading video.</p>';
+            }
+        }
+
+        async function fetchLiveStream() {
+            const streamUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&type=video&eventType=live&key=${API_KEY}`;
+            try {
+                const response = await fetch(streamUrl);
+                const data = await response.json();
+                const streamDiv = document.getElementById('stream-content');
+                const badge = document.getElementById('stream-badge');
+
+                if (data.items && data.items.length > 0) {
+                    const item = data.items[0].snippet;
+                    const id = data.items[0].id.videoId;
+                    
+                    badge.innerText = "🔴 LIVE NOW";
+                    badge.className = "badge"; 
+                    
+                    streamDiv.innerHTML = `
+                        <a href="https://www.youtube.com/watch?v=${id}" target="_blank">
+                            <img src="${item.thumbnails.medium.url}" alt="Live Thumbnail">
+                        </a>
+                        <h3>${item.title}</h3>
+                    `;
+                } else {
+                    badge.innerText = "OFFLINE";
+                    badge.className = "badge offline";
+                    streamDiv.innerHTML = `
+                        <a href="https://www.youtube.com/@Basically_DevYT" target="_blank">
+                            <img src="https://via.placeholder.com/320x180/333/666?text=Not+Streaming+Right+Now" style="opacity:0.5;" alt="Offline">
+                        </a>
+                        <h3>Catch the next stream on YouTube!</h3>
+                    `;
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('stream-content').innerHTML = '<p>Error checking status.</p>';
+            }
+        }
+
+        fetchLatestVideo();
+        fetchLiveStream();
+      // the fuck are you doing here??? -- BASICALLY_DEV HIMSELF
+    </script>
   </body>
 </html>
