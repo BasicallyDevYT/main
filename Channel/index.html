@@ -12,6 +12,28 @@
         padding: 20px;
       }
 
+      .audio-container {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+      }
+
+      #music-btn {
+        background-color: #262626;
+        color: #ffffff;
+        border: 1px solid #444444;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+
+      #music-btn:hover {
+        background-color: #333333;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      }
+
       .media-row {
         display: flex;
         justify-content: center;
@@ -79,6 +101,11 @@
     </style>
   </head>
   <body>
+    <div class="audio-container">
+        <button id="music-btn" onclick="toggleMusic()">🎵 Play Music</button>
+        <audio id="bg-music" src="https://github.com/BasicallyDevYT/main/blob/main/Channel/bgmusic.mp3" loop></audio>
+    </div>
+
     <h1>My channel</h1>
     <p>This is my page about my Youtube channel!</p>
     
@@ -110,6 +137,18 @@
         const API_KEY = 'AIzaSyDl7_5Yum1o0Gru_UBdZH2S1B4bCnit-ag'; // dumbass i made it so only basically_dev can use it, enjoy suffering
         const CHANNEL_ID = 'UCl-kI-6ma1msmRe9Ti0CHtA'; // don't care, redirects to my channel
         const UPLOADS_PLAYLIST_ID = 'UUl-kI-6ma1msmRe9Ti0CHtA';  // same thing
+
+        function toggleMusic() {
+            const audio = document.getElementById('bg-music');
+            const btn = document.getElementById('music-btn');
+            if (audio.paused) {
+                audio.play();
+                btn.innerText = "⏸️ Pause Music";
+            } else {
+                audio.pause();
+                btn.innerText = "🎵 Play Music";
+            }
+        }
 
         async function fetchLatestVideo() {
             const videoDiv = document.getElementById('video-content');
