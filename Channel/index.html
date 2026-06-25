@@ -150,7 +150,8 @@
             }
         }
 
-        toggleMusic()
+        audio.play();
+        btn.innerText = "Pause Music";
         
         async function fetchLatestVideo() {
             const videoDiv = document.getElementById('video-content');
