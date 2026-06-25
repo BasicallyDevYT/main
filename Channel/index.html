@@ -19,6 +19,9 @@
         gap: 30px;
         margin-top: 40px;
         flex-wrap: wrap;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
       }
 
       .card {
@@ -28,6 +31,10 @@
         padding: 15px;
         width: 320px;
         text-align: left;
+      }
+
+      .card.short-card {
+        width: 220px; 
       }
 
       .card img {
@@ -67,6 +74,10 @@
         justify-content: center;
       }
 
+      .card.short-card .fallback-box {
+        height: 320px; 
+      }
+
       button {
         padding: 10px 20px;
         cursor: pointer;
@@ -86,8 +97,18 @@
             <div id="video-content">Loading latest video...</div>
         </div>
 
+        <div class="card short-card" id="recent-short-card">
+            <div class="badge offline">SHORTS</div>
+            <div id="short-content">Loading latest short...</div>
+        </div>
+
+        <div class="card" id="recent-stream-card">
+            <div class="badge offline">RECENT LIVE</div>
+            <div id="recent-stream-content">Loading recent stream...</div>
+        </div>
+
         <div class="card" id="live-stream-card">
-            <div id="stream-badge" class="badge offline">OFFLINE</div>
+            <div id="stream-badge" class="badge offline">LIVE RIGHT NOW?</div>
             <div id="stream-content">Checking stream status...</div>
         </div>
 
@@ -104,17 +125,10 @@
             
             try {
                 const response = await fetch(url);
-                
-                if (response.status === 403) {
-                    showVideoError("API Error 1: Permission Denied");
-                    return;
-                } else if (!response.ok) {
-                    showVideoError("API Error 2: Could not connect");
-                    return;
-                }
+                if (response.status === 403) { showVideoError("API Error 1: Permission Denied"); return; }
+                if (!response.ok) { showVideoError("API Error 2: Could not connect"); return; }
 
                 const data = await response.json();
-
                 if (data.items && data.items.length > 0) {
                     const item = data.items[0].snippet;
                     const id = item.resourceId.videoId;
@@ -146,6 +160,100 @@
             `;
         }
 
+        async function fetchLatestShort() {
+            const shortDiv = document.getElementById('short-content');
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&maxResults=10&order=date&type=video&key=${API_KEY}`;
+            
+            try {
+                const response = await fetch(url);
+                if (response.status === 403) { showShortError("API Error 1: Permission Denied"); return; }
+                if (!response.ok) { showShortError("API Error 2: Could not connect"); return; }
+
+                const data = await response.json();
+                let shortFound = false;
+
+                if (data.items && data.items.length > 0) {
+                    for (let item of data.items) {
+                        const id = item.id.videoId;
+                        const shortCheck = await fetch(`https://../../shorts/${id}`, { method: 'HEAD' });
+                        
+                        if (shortCheck.url.includes('/shorts/') || item.snippet.title.toLowerCase().includes('#shorts')) {
+                            const title = item.snippet.title;
+                            const thumb = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.medium.url;
+                            
+                            shortDiv.innerHTML = `
+                                <a href="https://www.youtube.com/shorts/${id}" target="_blank" style="text-decoration: none; color: inherit;">
+                                    <div style="overflow: hidden; height: 320px; border-radius: 6px;">
+                                        <img src="${thumb}" alt="${title}" style="object-fit: cover; height: 100%;">
+                                    </div>
+                                    <h3>${title}</h3>
+                                </a>
+                            `;
+                            shortFound = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!shortFound) {
+                    showShortError("API Error 4: No videos/streams was uploaded to the channel");
+                }
+            } catch (err) {
+                console.error(err);
+                showShortError("API Error 3: Could not fetch videos/streams");
+            }
+        }
+
+        function showShortError(message) {
+            const shortDiv = document.getElementById('short-content');
+            shortDiv.innerHTML = `
+                <a href="https://www.youtube.com/@Basically_DevYT" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="fallback-box"></div>
+                    <h3>${message}</h3>
+                </a>
+            `;
+        }
+
+        async function fetchRecentStream() {
+            const streamDiv = document.getElementById('recent-stream-content');
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&type=video&eventType=completed&order=date&maxResults=1&key=${API_KEY}`;
+            
+            try {
+                const response = await fetch(url);
+                if (response.status === 403) { showRecentStreamError("API Error 1: Permission Denied"); return; }
+                if (!response.ok) { showRecentStreamError("API Error 2: Could not connect"); return; }
+
+                const data = await response.json();
+                if (data.items && data.items.length > 0) {
+                    const item = data.items[0].snippet;
+                    const id = data.items[0].id.videoId;
+                    const title = item.title;
+                    
+                    streamDiv.innerHTML = `
+                        <a href="https://www.youtube.com/watch?v=${id}" target="_blank" style="text-decoration: none; color: inherit;">
+                            <img src="${item.thumbnails.medium.url}" alt="${title}">
+                            <h3>${title}</h3>
+                        </a>
+                    `;
+                } else {
+                    showRecentStreamError("API Error 4: No videos/streams was uploaded to the channel");
+                }
+            } catch (err) {
+                console.error(err);
+                showRecentStreamError("API Error 3: Could not fetch videos/streams");
+            }
+        }
+
+        function showRecentStreamError(message) {
+            const streamDiv = document.getElementById('recent-stream-content');
+            streamDiv.innerHTML = `
+                <a href="https://www.youtube.com/@Basically_DevYT" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="fallback-box"></div>
+                    <h3>${message}</h3>
+                </a>
+            `;
+        }
+
         async function fetchLiveStream() {
             const streamDiv = document.getElementById('stream-content');
             const badge = document.getElementById('stream-badge');
@@ -153,17 +261,10 @@
             
             try {
                 const response = await fetch(url);
-                
-                if (response.status === 403) {
-                    showStreamError("API Error 1: Permission Denied");
-                    return;
-                } else if (!response.ok) {
-                    showStreamError("API Error 2: Could not connect");
-                    return;
-                }
+                if (response.status === 403) { showLiveError("API Error 1: Permission Denied"); return; }
+                if (!response.ok) { showLiveError("API Error 2: Could not connect"); return; }
 
                 const data = await response.json();
-
                 if (data.items && data.items.length > 0) {
                     const item = data.items[0].snippet;
                     const id = data.items[0].id.videoId;
@@ -189,11 +290,11 @@
                 }
             } catch (err) {
                 console.error(err);
-                showStreamError("API Error 3: Could not fetch videos/streams");
+                showLiveError("API Error 3: Could not fetch videos/streams");
             }
         }
 
-        function showStreamError(message) {
+        function showLiveError(message) {
             const streamDiv = document.getElementById('stream-content');
             streamDiv.innerHTML = `
                 <a href="https://www.youtube.com/@Basically_DevYT" target="_blank" style="text-decoration: none; color: inherit;">
@@ -204,6 +305,8 @@
         }
 
         fetchLatestVideo();
+        fetchLatestShort();
+        fetchRecentStream();
         fetchLiveStream();
     </script>
   </body>
