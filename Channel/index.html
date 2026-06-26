@@ -126,7 +126,7 @@
     <h1>My channel</h1>
     <p>This is my page about my Youtube channel!</p>
     
-    <a href="https://basicallydevyt.github.io/main/"><button>Go to back home</button></a>
+    <a href="../index.html"><button>Go back home</button></a>
 
     <div class="media-grid">
         <div class="card" id="recent-video-card">
@@ -234,7 +234,7 @@
                 }
                 if (!foundShort) showShortError("No active shorts discovered");
             } catch (err) {
-                shortDiv.showShortError("API Error 3: Fetch exception");
+                showShortError("API Error 3: Fetch exception");
             }
         }
 
@@ -305,13 +305,11 @@
             }
         }
 
-        // Helper function that adds a slight artificial breathing room (delay)
         const delay = ms => new Promise(res => setTimeout(res, ms));
 
-        // Runs sequences staggered to stop hitting Google Cloud all in one instant
         async function loadDashboardData() {
             fetchLatestVideo();
-            await delay(400);  // 0.4 seconds pause
+            await delay(400);  
             fetchLatestShort();
             await delay(400);  
             fetchRecentStream();
