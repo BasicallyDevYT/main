@@ -24,6 +24,16 @@
         line-height: 1.6;
       }
 
+      .section-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
       .dev-warning {
         color: #ff4d4d;
         font-weight: bold;
@@ -34,13 +44,21 @@
         margin-bottom: 30px;
       }
 
+      hr {
+        border: 0;
+        height: 1px;
+        background: #333333;
+        margin: 30px auto;
+        width: 60%;
+      }
+
       /* Base layout row for standard buttons */
       .button-container {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
         gap: 15px;
-        margin-top: 20px;
+        margin-bottom: 20px;
       }
 
       .button-container a {
@@ -107,12 +125,29 @@
       The channel tab is not guaranteed to work perfectly.
     </p>
     
+    <!-- SECTION 1: Standard No-Class Buttons -->
+    <div class="section-title">Links</div>
     <div class="button-container">
-      <a href="https://basicallydevyt.github.io/main/TermsOfService"><button class="discord-btn">Discord Server Terms of Service</button></a>
-      <a href="https://basicallydevyt.github.io/main/TermsOfService"><button class="discord-btn">Moderator Questionnaire</button></a>
-      <a href="https://basicallydevyt.github.io/main/Channel"><button class="warning-btn">Go to channel page</button></a>
       <a href="https://basicallydevyt.github.io/main/OldContent"><button>Go to Old Content page</button></a>
       <a href="https://github.com/BasicallyDevYT/main"><button>Github page</button></a>
     </div>
+
+    <hr>
+
+    <!-- SECTION 2: Discord Buttons -->
+    <div class="section-title">Discord related links</div>
+    <div class="button-container">
+      <a href="https://basicallydevyt.github.io/main/TermsOfService"><button class="discord-btn">Discord Server Terms of Service</button></a>
+      <a href="https://basicallydevyt.github.io/main/TermsOfService"><button class="discord-btn">Moderator Questionnaire</button></a>
+    </div>
+
+    <hr>
+
+    <!-- SECTION 3: Warning Buttons -->
+    <div class="section-title">Dangerous links</div>
+    <div class="button-container">
+      <a href="https://basicallydevyt.github.io/main/Channel"><button class="warning-btn">Go to channel page</button></a>
+    </div>
+
   </body>
 </html>
