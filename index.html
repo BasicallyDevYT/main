@@ -36,7 +36,7 @@
 
       /* Global base styles for ALL buttons */
       button {
-        background-color: #ff0000;
+        background-color: #1a1a1a;
         color: #ffffff;
         border: none;
         padding: 12px 28px;
@@ -64,9 +64,18 @@
         background-color: #5865F2; /* Discord Blurple */
       }
 
+      button.warning-btn {
+        background-color: #ff0000; /* Discord Blurple */
+      }
+
       /* Custom blue glow and color swap on hover */
       button.discord-btn:hover {
         background-color: #4752C4;
+        box-shadow: 0 0 15px #5865F2, 0 0 30px #5865F2;
+      }
+
+      button.discord-btn:hover {
+        background-color: #ff8787;
         box-shadow: 0 0 15px #5865F2, 0 0 30px #5865F2;
       }
     </style>
@@ -80,14 +89,12 @@
       This website is Open source!<br>
     </p>
     <p class="dev-warning">
-      The channel tab is broken so it has been temporarily removed.
+      The channel tab is not guaranteed to work perfectly.
     </p>
     
     <a href="https://basicallydevyt.github.io/main/TermsOfService"><button class="discord-btn">Discord Server Terms of Service</button></a>
     <a href="https://basicallydevyt.github.io/main/OldContent"><button>Go to Old Content page</button></a>
     <a href="https://github.com/BasicallyDevYT/main"><button>Github page</button></a>
-    <script>
-      // <a href="https://basicallydevyt.github.io/main/Channel"><button>Go to channel page</button></a>
-    </script>
+    <a href="https://basicallydevyt.github.io/main/Channel"><button class="warning-btn">Go to channel page</button></a>
   </body>
 </html>
