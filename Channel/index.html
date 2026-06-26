@@ -182,14 +182,20 @@
                 const items = data.items || [];
 
                 if (items.length > 0) {
-                    const latest = items[0].snippet;
-                    const latestId = latest.resourceId.videoId;
-                    videoDiv.innerHTML = createVideoHTML(latestId, latest.thumbnails.medium?.url || latest.thumbnails.default?.url, latest.title);
-
-                    let foundShort = false;
+                    // Find the first item that IS NOT a short to use as your true Latest Video
+                    let foundLatestVideo = false;
                     for (let item of items) {
                         const snip = item.snippet;
-                        if (snip.title.toLowerCase().includes('#shorts') || snip.description.toLowerCase().includes('#shorts')) {
+                        const isShort = snip.title.toLowerCase().includes('#shorts') || snip.description.toLowerCase().includes('#shorts');
+                        const isStream = snip.title.toLowerCase().includes('stream') || snip.title.toLowerCase().includes('live');
+                        
+                        if (!isShort && !isStream && !foundLatestVideo) {
+                            const latestId = snip.resourceId.videoId;
+                            videoDiv.innerHTML = createVideoHTML(latestId, snip.thumbnails.medium?.url || snip.thumbnails.default?.url, snip.title);
+                            foundLatestVideo = true;
+                        }
+                        
+                        if (isShort && !shortDiv.innerHTML.includes('href')) {
                             const shortId = snip.resourceId.videoId;
                             shortDiv.innerHTML = `
                                 <a href="https://www.youtube.com/shorts/${shortId}" target="_blank" style="text-decoration: none; color: inherit;">
@@ -198,11 +204,14 @@
                                     </div>
                                     <h3>${snip.title}</h3>
                                 </a>`;
-                            foundShort = true;
-                            break;
                         }
                     }
-                    if (!foundShort) showError('short-content', "No active shorts discovered");
+                    
+                    // Fallback if you don't have a distinct non-stream video recently
+                    if (!foundLatestVideo) {
+                        const latestId = items[0].snippet.resourceId.videoId;
+                        videoDiv.innerHTML = createVideoHTML(latestId, items[0].snippet.thumbnails.medium?.url || items[0].snippet.thumbnails.default?.url, items[0].snippet.title);
+                    }
                 } else {
                     showError('video-content', "No uploads discovered");
                     showError('short-content', "No shorts discovered");
@@ -212,8 +221,8 @@
                 showError('short-content', "API Error 2: Connection Failed");
             }
 
-            // 2. Fetch Recent Live Streams using the low-cost Activities endpoint (Cost = 1 unit)
-            const activitiesUrl = `https://www.googleapis.com/youtube/v3/activities?part=snippet,contentDetails&channelId=${CHANNEL_ID}&maxResults=10&key=${API_KEY}`;
+            // 2. Fetch Recent Live Streams via Activities (Cost = 1 unit)
+            const activitiesUrl = `https://www.googleapis.com/youtube/v3/activities?part=snippet,contentDetails&channelId=${CHANNEL_ID}&maxResults=15&key=${API_KEY}`;
             try {
                 const response = await fetch(activitiesUrl);
                 if (response.status === 403) {
@@ -226,12 +235,15 @@
                 let foundRecentStream = false;
 
                 for (let item of items) {
-                    // Look for uploaded content or updates that match a live broadcast signature natively
-                    if (item.snippet.type === 'upload' || item.snippet.type === 'recommendation') {
-                        const title = item.snippet.title;
+                    const title = item.snippet.title;
+                    const type = item.snippet.type;
+                    
+                    // Look specifically for items that have streaming markers in their text OR are flagged as a bulletin/upload activity
+                    if (type === 'upload' || type === 'recommendation') {
+                        // Checks if it is a stream without hardcoding titles like "Streaming Geometry dash"
+                        const isStreamText = title.toLowerCase().includes('stream') || title.toLowerCase().includes('live') || title.toLowerCase().includes('streaming');
                         
-                        // Dynamic matching: checks if this activity was your stream without hardcoding it
-                        if (title.toLowerCase().includes('stream') || title.toLowerCase().includes('live') || title.toLowerCase().includes('dash')) {
+                        if (isStreamText) {
                             const videoId = item.contentDetails.upload?.videoId || item.contentDetails.recommendation?.resourceId?.videoId;
                             
                             if (videoId) {
@@ -241,14 +253,14 @@
                                     title
                                 );
                                 foundRecentStream = true;
-                                break;
+                                break; // Stop looking once we find the newest stream archive
                             }
                         }
                     }
                 }
 
                 if (!foundRecentStream) {
-                    showError('recent-stream-content', "No recent streams found in channel history");
+                    showError('recent-stream-content', "No completed live stream archives found");
                 }
 
             } catch (err) {
