@@ -10,14 +10,12 @@
         color: #ffffff;
         text-align: center;
         padding: 20px;
-        margin: 0;
       }
 
       .audio-container {
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 100;
       }
 
       #music-btn {
@@ -36,13 +34,12 @@
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
       }
 
-      .media-grid {
+      .media-row {
         display: flex;
         justify-content: center;
-        align-items: stretch;
-        gap: 20px;
-        max-width: 1200px;
-        margin: 30px auto;
+        align-items: flex-start;
+        gap: 30px;
+        margin-top: 30px;
         flex-wrap: wrap;
       }
 
@@ -51,23 +48,23 @@
         border: 1px solid #444444;
         border-radius: 8px;
         padding: 15px;
-        width: 280px;
+        width: 320px;
         text-align: left;
-        display: flex;
-        flex-direction: column;
+      }
+
+      .card.short-card {
+        width: 220px;
       }
 
       .card img {
         width: 100%;
         border-radius: 6px;
-        object-fit: cover;
       }
 
       .card h3 {
-        margin: 10px 0 0 0;
-        font-size: 15px;
+        margin: 10px 0 5px 0;
+        font-size: 16px;
         color: #ffffff;
-        line-height: 1.4;
       }
 
       .badge {
@@ -79,8 +76,6 @@
         border-radius: 4px;
         display: inline-block;
         margin-bottom: 10px;
-        width: fit-content;
-        text-transform: uppercase;
       }
 
       .badge.offline {
@@ -89,35 +84,23 @@
 
       .fallback-box {
         width: 100%;
-        height: 150px;
+        height: 180px;
         background-color: #1f1f1f;
         border: 1px dashed #444444;
         border-radius: 6px;
       }
 
-      button {
-        background-color: #ff0000;
-        color: #ffffff;
-        border: none;
-        padding: 12px 28px;
-        font-size: 1rem;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 0 0px rgba(255, 0, 0, 0);
-        margin-bottom: 20px;
+      .card.short-card .fallback-box {
+        height: 320px;
       }
 
-      button:hover {
-        background-color: #ff3333;
-        transform: translateY(-2px);
-        box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
+      button {
+        padding: 10px 20px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
-
     <div class="audio-container">
         <button id="music-btn" onclick="toggleMusic()">Play Music</button>
         <audio id="bg-music" src="./bgmusic.mp3" loop></audio>
@@ -126,24 +109,24 @@
     <h1>My channel</h1>
     <p>This is my page about my Youtube channel!</p>
     
-    <a href="../index.html"><button>Go back home</button></a>
+    <a href="https://basicallydevyt.github.io/main/"><button>Go to back home</button></a>
 
-    <div class="media-grid">
+    <div class="media-row">
         <div class="card" id="recent-video-card">
-            <div class="badge">LATEST VIDEO</div>
+            <div class="badge offline">LATEST VIDEO</div>
             <div id="video-content">Loading latest video...</div>
         </div>
-
-        <div class="card" id="recent-short-card">
-            <div class="badge">SHORTS</div>
+        <div class="card short-card" id="recent-short-card">
+            <div class="badge offline">SHORTS</div>
             <div id="short-content">Loading latest short...</div>
         </div>
+    </div>
 
+    <div class="media-row">
         <div class="card" id="recent-stream-card">
-            <div class="badge">RECENT LIVE</div>
+            <div class="badge offline">RECENT LIVE</div>
             <div id="recent-stream-content">Loading recent stream...</div>
         </div>
-
         <div class="card" id="live-stream-card">
             <div id="stream-badge" class="badge offline">OFFLINE</div>
             <div id="stream-content">Checking stream status...</div>
@@ -167,15 +150,19 @@
             }
         }
 
+        // Properly handles trying to trigger the music setup when the page finishes loading
         window.addEventListener('DOMContentLoaded', () => {
             const audio = document.getElementById('bg-music');
             const btn = document.getElementById('music-btn');
             
+            // Try to play immediately
             audio.play().then(() => {
+                // If browser allows autoplay, update button state
                 btn.innerText = "Pause Music";
-            }).catch((err) => {
+            }).catch((error) => {
+                // If browser blocks it, reset button layout to wait for user's click interaction
                 btn.innerText = "Play Music";
-                console.log("Autoplay caught/delayed until interaction.");
+                console.log("Autoplay was blocked by the browser. Waiting for user interaction.");
             });
         });
         
@@ -185,7 +172,7 @@
             try {
                 const response = await fetch(url);
                 if (response.status === 403) return showVideoError("API Error 1: Permission Denied");
-                if (!response.ok) return showVideoError("API Error 2: Connection Failed");
+                if (!response.ok) return showVideoError("API Error 2: Could not connect");
                 const data = await response.json();
                 if (data.items && data.items.length > 0) {
                     const item = data.items[0].snippet;
@@ -196,10 +183,10 @@
                             <h3>${item.title}</h3>
                         </a>`;
                 } else {
-                    showVideoError("No recent uploads found");
+                    showVideoError("API Error 4: No videos/streams was uploaded to the channel");
                 }
             } catch (err) {
-                showVideoError("API Error 3: Fetch exception");
+                showVideoError("API Error 3: Could not fetch videos/streams");
             }
         }
 
@@ -212,19 +199,21 @@
 
         async function fetchLatestShort() {
             const shortDiv = document.getElementById('short-content');
-            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&maxResults=10&order=date&type=video&key=${API_KEY}`;
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&maxResults=5&order=date&type=video&key=${API_KEY}`;
             try {
                 const response = await fetch(url);
                 if (response.status === 403) return showShortError("API Error 1: Permission Denied");
-                if (!response.ok) return showShortError("API Error 2: Connection Failed");
+                if (!response.ok) return showShortError("API Error 2: Could not connect");
                 const data = await response.json();
                 let foundShort = false;
                 if (data.items && data.items.length > 0) {
                     for (let item of data.items) {
-                        if (item.snippet && (item.snippet.title.toLowerCase().includes('#shorts') || item.snippet.description.toLowerCase().includes('#shorts'))) {
+                        if (item.snippet.title.toLowerCase().includes('#shorts') || item.snippet.description.toLowerCase().includes('#shorts')) {
                             shortDiv.innerHTML = `
                                 <a href="https://www.youtube.com/shorts/${item.id.videoId}" target="_blank" style="text-decoration: none; color: inherit;">
-                                    <img src="${item.snippet.thumbnails.medium.url}" alt="${item.snippet.title}">
+                                    <div style="overflow: hidden; height: 320px; border-radius: 6px;">
+                                        <img src="${item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.medium.url}" style="object-fit: cover; height: 100%;">
+                                    </div>
                                     <h3>${item.snippet.title}</h3>
                                 </a>`;
                             foundShort = true;
@@ -232,9 +221,9 @@
                         }
                     }
                 }
-                if (!foundShort) showShortError("No active shorts discovered");
+                if (!foundShort) showShortError("API Error 4: No videos/streams was uploaded to the channel");
             } catch (err) {
-                showShortError("API Error 3: Fetch exception");
+                showShortError("API Error 3: Could not fetch videos/streams");
             }
         }
 
@@ -251,9 +240,9 @@
             try {
                 const response = await fetch(url);
                 if (response.status === 403) return showRecentError("API Error 1: Permission Denied");
-                if (!response.ok) return showRecentError("API Error 2: Connection Failed");
+                if (!response.ok) return showRecentError("API Error 2: Could not connect");
                 const data = await response.json();
-                if (data.items && data.items.length > 0 && data.items[0].snippet) {
+                if (data.items && data.items.length > 0) {
                     const item = data.items[0].snippet;
                     streamDiv.innerHTML = `
                         <a href="https://www.youtube.com/watch?v=${data.items[0].id.videoId}" target="_blank" style="text-decoration: none; color: inherit;">
@@ -261,10 +250,10 @@
                             <h3>${item.title}</h3>
                         </a>`;
                 } else {
-                    showRecentError("No older streams logged");
+                    showRecentError("API Error 4: No videos/streams was uploaded to the channel");
                 }
             } catch (err) {
-                showRecentError("API Error 3: Fetch exception");
+                showRecentError("API Error 3: Could not fetch videos/streams");
             }
         }
 
@@ -282,9 +271,9 @@
             try {
                 const response = await fetch(url);
                 if (response.status === 403) { streamDiv.innerHTML = '<h3>API Error 1: Permission Denied</h3>'; return; }
-                if (!response.ok) { streamDiv.innerHTML = '<h3>API Error 2: Connection Failed</h3>'; return; }
+                if (!response.ok) { streamDiv.innerHTML = '<h3>API Error 2: Could not connect</h3>'; return; }
                 const data = await response.json();
-                if (data.items && data.items.length > 0 && data.items[0].snippet) {
+                if (data.items && data.items.length > 0) {
                     badge.innerText = "🔴 LIVE NOW";
                     badge.className = "badge"; 
                     streamDiv.innerHTML = `
@@ -301,23 +290,14 @@
                         </a>`;
                 }
             } catch (err) {
-                streamDiv.innerHTML = '<h3>API Error 3: Fetch exception</h3>';
+                streamDiv.innerHTML = '<h3>API Error 3: Could not fetch videos/streams</h3>';
             }
         }
 
-        const delay = ms => new Promise(res => setTimeout(res, ms));
-
-        async function loadDashboardData() {
-            fetchLatestVideo();
-            await delay(400);  
-            fetchLatestShort();
-            await delay(400);  
-            fetchRecentStream();
-            await delay(400);  
-            fetchLiveStream();
-        }
-
-        loadDashboardData();
+        fetchLatestVideo();
+        fetchLatestShort();
+        fetchRecentStream();
+        fetchLiveStream();
     </script>
   </body>
 </html>
