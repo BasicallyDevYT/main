@@ -182,20 +182,26 @@
                 const items = data.items || [];
 
                 if (items.length > 0) {
-                    // Find the first item that IS NOT a short to use as your true Latest Video
+                    // Reset the inner HTML text so it wipes out "Loading latest short..." completely
+                    shortDiv.innerHTML = "";
+
                     let foundLatestVideo = false;
+                    let foundShort = false;
+
                     for (let item of items) {
                         const snip = item.snippet;
                         const isShort = snip.title.toLowerCase().includes('#shorts') || snip.description.toLowerCase().includes('#shorts');
                         const isStream = snip.title.toLowerCase().includes('stream') || snip.title.toLowerCase().includes('live');
                         
+                        // Grab the first true normal video
                         if (!isShort && !isStream && !foundLatestVideo) {
                             const latestId = snip.resourceId.videoId;
                             videoDiv.innerHTML = createVideoHTML(latestId, snip.thumbnails.medium?.url || snip.thumbnails.default?.url, snip.title);
                             foundLatestVideo = true;
                         }
                         
-                        if (isShort && !shortDiv.innerHTML.includes('href')) {
+                        // Grab the first true short without checking layout contents
+                        if (isShort && !foundShort) {
                             const shortId = snip.resourceId.videoId;
                             shortDiv.innerHTML = `
                                 <a href="https://www.youtube.com/shorts/${shortId}" target="_blank" style="text-decoration: none; color: inherit;">
@@ -204,13 +210,17 @@
                                     </div>
                                     <h3>${snip.title}</h3>
                                 </a>`;
+                            foundShort = true;
                         }
                     }
                     
-                    // Fallback if you don't have a distinct non-stream video recently
+                    // Fallback if no specific clean video types were tracked in the array list response
                     if (!foundLatestVideo) {
                         const latestId = items[0].snippet.resourceId.videoId;
                         videoDiv.innerHTML = createVideoHTML(latestId, items[0].snippet.thumbnails.medium?.url || items[0].snippet.thumbnails.default?.url, items[0].snippet.title);
+                    }
+                    if (!foundShort) {
+                        showError('short-content', "No recent shorts found");
                     }
                 } else {
                     showError('video-content', "No uploads discovered");
@@ -238,9 +248,7 @@
                     const title = item.snippet.title;
                     const type = item.snippet.type;
                     
-                    // Look specifically for items that have streaming markers in their text OR are flagged as a bulletin/upload activity
                     if (type === 'upload' || type === 'recommendation') {
-                        // Checks if it is a stream without hardcoding titles like "Streaming Geometry dash"
                         const isStreamText = title.toLowerCase().includes('stream') || title.toLowerCase().includes('live') || title.toLowerCase().includes('streaming');
                         
                         if (isStreamText) {
@@ -253,7 +261,7 @@
                                     title
                                 );
                                 foundRecentStream = true;
-                                break; // Stop looking once we find the newest stream archive
+                                break; 
                             }
                         }
                     }
