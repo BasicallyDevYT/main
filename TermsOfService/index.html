@@ -75,10 +75,18 @@
         background: #5865F2;
       }
 
-      /* BUTTON WRAPPER SPACER */
+      /* NEW BUTTON ACTION ROW CONTAINER FOR HORIZONTAL ALIGNMENT */
+      .button-row {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 15px; /* Spaces the buttons out sideways */
+        margin-top: 10px;
+        width: 100%;
+      }
+
       .home-link-wrapper {
-        align-self: center;
-        margin-top: 10px; 
         text-decoration: none;
       }
 
@@ -141,9 +149,10 @@ Please be normal and be respectful.
 If you are under 13. Please do NOT Activate Voice in VCs.
 No self-promotion.</div>
   
-      <a href="https://basicallydevyt.github.io/main/" class="home-link-wrapper"><button>Go back home</button></a>
-      
-      <a href="https://discord.gg/rhK6JHuS4b" class="home-link-wrapper discord-btn"><button>Join Discord server</button></a>
+      <div class="button-row">
+        <a href="../index.html" class="home-link-wrapper"><button>Go back home</button></a>
+        <a href="https://discord.gg/rhK6JHuS4b" class="home-link-wrapper discord-btn"><button>Join Discord server</button></a>
+      </div>
     </div>
 
   </body>
