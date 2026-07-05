@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Full Screen NES Emulator</title>
+    <style>
+        /* Eliminates all margins, scrollbars, and forces the game to occupy 100% of the screen viewport */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            overflow: hidden;
+        }
+        #game {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- This div fills 100% of your screen -->
+    <div id="game"></div>
+
+    <script type="text/javascript">
+        EJS_player = '#game'; 
+        EJS_core = 'nes';
+        
+        // Point this to your NES file inside your repository
+        EJS_gameUrl = 'mygame.nes'; 
+        
+        // --- AUDIO CONFIGURATION ---
+        // Modern web browsers block audio from playing automatically until a user clicks something. 
+        // These settings tell EmulatorJS to explicitly turn on audio the exact millisecond the user interacts with the page.
+        EJS_startOnLoaded = true; // Instantly starts the game engine once downloaded
+        EJS_Volume = 1.0;         // Sets full baseline volume (1.0 = 100%)
+        
+        // CDN data path for the core emulator files
+        EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/'; 
+    </script>
+
+    <!-- Load the main EmulatorJS engine -->
+    <script type="text/javascript" src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+
+</body>
+</html>
