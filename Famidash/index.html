@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Famidash - TEST BUILD 5</title>
+    <title>Famidash - TEST BUILD 6</title>
     <style>
         html, body {
             margin: 0;
@@ -48,6 +48,10 @@
         EJS_startOnLoaded = true;
         EJS_Volume = 1.0;        
 
+        // --- OFFICIAL NATIVE NATIVE AUTO-SAVE SETTING ---
+        // Forces the emulator engine to silently auto-save every 5000ms (5 seconds)
+        EJS_fixedSaveInterval = 5000; 
+
         // --- HARDWARE ENGINE CONTROL KEYBINDS ---
         const defaultLayout = { 
             0: { 
@@ -84,37 +88,6 @@
             if (config) {
                 setGameCookie('famidash_config_data', JSON.stringify(config));
             }
-        };
-
-        // --- FULL AUTOMATIC SAVE/LOAD SYSTEM ---
-        EJS_onGameStart = function() {
-            // Check if an auto-save exists inside browser local memory
-            const automaticSave = localStorage.getItem('famidash_auto_snapshot');
-            if (automaticSave && typeof __EJS_emulator !== 'undefined') {
-                setTimeout(() => {
-                    try {
-                        __EJS_emulator.loadState(automaticSave);
-                        console.log("Auto-save loaded successfully!");
-                    } catch(e) {
-                        console.error("Auto-load deferred:", e);
-                    }
-                }, 1500); // Gives the core a 1.5-second warm-up buffer
-            }
-
-            // Fire an background engine sync interval every 5 seconds
-            setInterval(() => {
-                if (typeof __EJS_emulator !== 'undefined' && typeof __EJS_emulator.gameManager !== 'undefined') {
-                    try {
-                        // Grab live state directly from emulation memory structure
-                        const liveState = __EJS_emulator.gameManager.getState();
-                        if (liveState) {
-                            localStorage.setItem('famidash_auto_snapshot', liveState);
-                        }
-                    } catch(err) {
-                        // Core busy or frames syncing, skip step safely
-                    }
-                }
-            }, 5000); 
         };
     </script>
 
