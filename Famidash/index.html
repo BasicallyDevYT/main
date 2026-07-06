@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Famidash Ultimate Build</title>
+    <title>Famidash</title>
     <style>
         html, body {
             margin: 0;
@@ -29,22 +29,24 @@
         EJS_player = '#game'; 
         EJS_core = 'nes';
         
-        // Hardcoded straight to your repository's live site asset
+        // Live URL destination
         EJS_gameUrl = 'https://basicallydevyt.github.io/main/Famidash/Famidash.nes'; 
         
         EJS_startOnLoaded = true; 
         EJS_Volume = 1.0;         
         
-        // --- KEYBOARD MAPPING CONFIGURATION ---
-        EJS_buttons = {
-            p1_up: 'ArrowUp',
-            p1_down: 'ArrowDown',
-            p1_left: 'ArrowLeft',
-            p1_right: 'ArrowRight',
-            p1_a: 'Space',       
-            p1_b: 'KeyZ',        
-            p1_start: 'Enter',   
-            p1_select: 'Shift'   
+        // --- HARDWARE ENGINE CONTROL KEYBINDS ---
+        EJS_defaultControls = { 
+            0: { 
+                0: { 'value': 'space', 'value2': 'BUTTON_1' },      // A: Spacebar
+                1: { 'value': 'z', 'value2': 'BUTTON_2' },          // B: Z Key
+                2: { 'value': 'shift', 'value2': 'BUTTON_9' },      // Select: Shift (Any)
+                3: { 'value': 'enter', 'value2': 'BUTTON_10' },     // Start: Enter
+                4: { 'value': 'up arrow', 'value2': 'DPAD_UP' },    // D-Pad Up
+                5: { 'value': 'down arrow', 'value2': 'DPAD_DOWN' },// D-Pad Down
+                6: { 'value': 'left arrow', 'value2': 'DPAD_LEFT' },// D-Pad Left
+                7: { 'value': 'right arrow', 'value2': 'DPAD_RIGHT'}// D-Pad Right
+            }
         };
 
         EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
