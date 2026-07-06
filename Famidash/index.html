@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Famidash Ultimate Build</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #game {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game"></div>
+
+    <script type="text/javascript">
+        EJS_player = '#game'; 
+        EJS_core = 'nes';
+        
+        // Hardcoded straight to your repository's live site asset
+        EJS_gameUrl = 'https://basicallydevyt.github.io/main/Famidash/Famidash.nes'; 
+        
+        EJS_startOnLoaded = true; 
+        EJS_Volume = 1.0;         
+        
+        // --- KEYBOARD MAPPING CONFIGURATION ---
+        EJS_buttons = {
+            p1_up: 'ArrowUp',
+            p1_down: 'ArrowDown',
+            p1_left: 'ArrowLeft',
+            p1_right: 'ArrowRight',
+            p1_a: 'Space',       
+            p1_b: 'KeyZ',        
+            p1_start: 'Enter',   
+            p1_select: 'Shift'   
+        };
+
+        EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+    </script>
+
+    <script type="text/javascript" src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+
+    <script type="text/javascript">
+        // --- MOUSE CLICK INPUT ENGINE ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const gameContainer = document.getElementById('game');
+            gameContainer.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            gameContainer.addEventListener('mousedown', (e) => {
+                if (typeof __EJS_emulator === 'undefined') return;
+                if (e.button === 0) __EJS_emulator.gamepad_set_button(0, 0, 1); // Left Click -> NES A
+                else if (e.button === 2) __EJS_emulator.gamepad_set_button(0, 1, 1); // Right Click -> NES B
+            });
+
+            gameContainer.addEventListener('mouseup', (e) => {
+                if (typeof __EJS_emulator === 'undefined') return;
+                if (e.button === 0) __EJS_emulator.gamepad_set_button(0, 0, 0);
+                else if (e.button === 2) __EJS_emulator.gamepad_set_button(0, 1, 0);
+            });
+        });
+    </script>
+
+</body>
+</html>
