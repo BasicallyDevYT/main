@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Famidash - TEST BUILD 6</title>
+    <title>Famidash - TEST BUILD 7</title>
     <style>
         html, body {
             margin: 0;
@@ -48,9 +48,28 @@
         EJS_startOnLoaded = true;
         EJS_Volume = 1.0;        
 
-        // --- OFFICIAL NATIVE NATIVE AUTO-SAVE SETTING ---
-        // Forces the emulator engine to silently auto-save every 5000ms (5 seconds)
-        EJS_fixedSaveInterval = 5000; 
+        // --- BINARY PROGRESS AUTO-LOADER LAYER ---
+        const GAME_KEY = "EJS_AUTOSAVE_Famidash";
+        const savedState = localStorage.getItem(GAME_KEY);
+
+        if (savedState) {
+            try {
+                // Decode base64 text back into raw binary bytes
+                const binaryString = atob(savedState);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // Create a virtual state file blob and link it straight to core initialization
+                const stateFile = new File([bytes], "autosave.state");
+                EJS_loadStateURL = URL.createObjectURL(stateFile);
+                console.log("Auto-save package prepared successfully.");
+            } catch (e) {
+                console.error("Failed to decode save state on boot:", e);
+            }
+        }
 
         // --- HARDWARE ENGINE CONTROL KEYBINDS ---
         const defaultLayout = { 
@@ -88,6 +107,42 @@
             if (config) {
                 setGameCookie('famidash_config_data', JSON.stringify(config));
             }
+        };
+
+        // --- FULL BINARY BACKGROUND AUTO-SAVE ENGINE ---
+        EJS_onGameStart = function() {
+            const SAVE_INTERVAL = 10000; // Fires a hard snapshot every 10 seconds
+            
+            setInterval(() => {
+                try {
+                    // Tap into the official event runtime hooks
+                    if (window.__EJS_emulator && window.__EJS_emulator.gameManager) {
+                        
+                        // Extract raw game data bytes straight out of emulated WebAssembly active memory
+                        const stateData = window.__EJS_emulator.gameManager.getState();
+                        
+                        if (stateData && stateData.length > 0) {
+                            // Safely convert binary buffer into portable string sequence
+                            let binaryString = '';
+                            const chunkSize = 8192; // Chunk to bypass string argument limitations
+                            for (let i = 0; i < stateData.length; i += chunkSize) {
+                                binaryString += String.fromCharCode.apply(null, stateData.subarray(i, i + chunkSize));
+                            }
+                            const base64State = btoa(binaryString);
+                            
+                            // Send to localStorage sandbox
+                            localStorage.setItem(GAME_KEY, base64State);
+                            
+                            // Native UI confirmation overlay alert
+                            if (window.__EJS_emulator.displayMessage) {
+                                window.__EJS_emulator.displayMessage({text: "Progress Auto-Saved!", duration: 1500});
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Auto-save runtime error:", error);
+                }
+            }, SAVE_INTERVAL);
         };
     </script>
 
