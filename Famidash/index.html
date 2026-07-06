@@ -12,173 +12,172 @@
             height: 100vh;
             background-color: #000;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
-        #game {
-            width: 100%;
-            height: 100%;
+        canvas {
+            width: 100vmin;
+            height: 100vmin;
+            max-width: 100vw;
+            max-height: 100vh;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
     </style>
 </head>
 <body>
 
-    <div id="game"></div>
+    <canvas id="emulator" width="256" height="240"></canvas>
 
-    <script type="text/javascript">
-        // --- COOKIE ENGINE FUNCTIONS ---
-        function setGameCookie(name, value) {
-            const date = new Date();
-            date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000));
-            document.cookie = name + "=" + encodeURIComponent(value) + "; expires=" + date.toUTCString() + "; path=/; SameSite=Strict";
+    <!-- Hyper-optimized raw WASM NES core -->
+    <script src="https://binjgb.github.io/binjnes/binjnes.js"></script>
+
+    <script>
+        const ROM_URL = 'https://basicallydevyt.github.io/main/Famidash/Famidash.nes';
+        const SAVE_KEY = 'EJS_AUTOSAVE_Famidash';
+        const canvas = document.getElementById('emulator');
+        let emulator = null;
+        let audioContext = null;
+
+        // Initialize Audio Context on first user interaction (iOS Requirement)
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
         }
 
-        function getGameCookie(name) {
-            const matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
-            return matches ? decodeURIComponent(matches[1]) : null;
-        }
-
-        // --- CORE EMULATOR SETUP ---
-        EJS_player = '#game';
-        EJS_core = 'nes';
-        EJS_gameUrl = 'https://basicallydevyt.github.io/main/Famidash/Famidash.nes'; 
-        
-        EJS_gameName = 'Famidash'; 
-        EJS_gameID = 99124;        
-        EJS_startOnLoaded = true;
-        EJS_Volume = 1.0;        
-
-        // SAFE PERFORMANCE CONFIGURATION (No custom server headers required)
-        EJS_threads = false;       
-
-        // --- BINARY PROGRESS AUTO-LOADER LAYER ---
-        const GAME_KEY = "EJS_AUTOSAVE_Famidash";
-        const savedState = localStorage.getItem(GAME_KEY);
-
-        if (savedState) {
+        // --- HARDWARE RUNTIME CORE ---
+        async function startEmulator() {
             try {
-                const binaryString = atob(savedState);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                
-                const stateFile = new File([bytes], "autosave.state");
-                EJS_loadStateURL = URL.createObjectURL(stateFile);
-                console.log("Auto-save package prepared successfully.");
-            } catch (e) {
-                console.error("Failed to decode save state on boot:", e);
-            }
-        }
+                const response = await fetch(ROM_URL);
+                const romBuffer = await response.arrayBuffer();
+                const romUint8 = new Uint8Array(romBuffer);
 
-        // --- HARDWARE ENGINE CONTROL KEYBINDS (Desktop Keyboard Layout) ---
-        const defaultLayout = { 
-            0: { 
-                0: { 'value': 'z', 'value2': 'BUTTON_2' },          // Index 0: NES B -> Z Key
-                2: { 'value': 'shift', 'value2': 'SELECT' },        // Index 2: Select -> Shift
-                3: { 'value': 'enter', 'value2': 'START' },         // Index 3: Start -> Enter
-                4: { 'value': 'up arrow', 'value2': 'DPAD_UP' },    // Index 4: D-Pad Up
-                5: { 'value': 'down arrow', 'value2': 'DPAD_DOWN' },// Index 5: D-Pad Down
-                6: { 'value': 'left arrow', 'value2': 'DPAD_LEFT' },// Index 6: D-Pad Left
-                7: { 'value': 'right arrow', 'value2': 'DPAD_RIGHT'},// Index 7: D-Pad Right
-                8: { 'value': 'space', 'value2': 'BUTTON_1' }       // Index 8: NES A -> Spacebar
-            },
-            1: {},
-            2: {},
-            3: {}
-        };
-
-        // --- COOKIE CONFIGURATION LOADER ---
-        const savedConfig = getGameCookie('famidash_config_data');
-        if (savedConfig) {
-            try {
-                EJS_defaultControls = JSON.parse(savedConfig);
-            } catch(e) {
-                EJS_defaultControls = defaultLayout;
-            }
-        } else {
-            EJS_defaultControls = defaultLayout;
-        }
-
-        EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-
-        EJS_onSaveConfiguration = function(config) {
-            if (config) {
-                setGameCookie('famidash_config_data', JSON.stringify(config));
-            }
-        };
-
-        // --- NON-BLOCKING ASYNC BACKGROUND AUTO-SAVE ENGINE ---
-        EJS_onGameStart = function() {
-            const SAVE_INTERVAL = 15000; 
-            
-            setInterval(() => {
-                try {
-                    if (window.__EJS_emulator && window.__EJS_emulator.gameManager) {
-                        const stateData = window.__EJS_emulator.gameManager.getState();
-                        
-                        if (stateData && stateData.length > 0) {
-                            const blob = new Blob([stateData], {type: 'application/octet-stream'});
-                            const reader = new FileReader();
-                            
-                            reader.onloadend = function() {
-                                const base64State = reader.result.split(',')[1];
-                                localStorage.setItem(GAME_KEY, base64State);
-                                
-                                if (window.__EJS_emulator.displayMessage) {
-                                    window.__EJS_emulator.displayMessage({text: "Progress Auto-Saved!", duration: 1200});
-                                }
-                            };
-                            reader.readAsDataURL(blob);
-                        }
+                // Create clean instance directly on canvas
+                emulator = new Binjnes(canvas, {
+                    audioContext: audioContext,
+                    onSave: (state) => {
+                        // High-speed base64 encoding without blocking main execution thread
+                        const blob = new Blob([state], {type: 'application/octet-stream'});
+                        const reader = new FileReader();
+                        reader.onloadend = () => localStorage.setItem(SAVE_KEY, reader.result.split(',')[1]);
+                        reader.readAsDataURL(blob);
                     }
-                } catch (error) {
-                    console.error("Auto-save runtime error:", error);
+                });
+
+                emulator.loadROM(romUint8);
+
+                // Load existing Save State if present
+                const savedData = localStorage.getItem(SAVE_KEY);
+                if (savedData) {
+                    const binaryString = atob(savedData);
+                    const stateArray = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        stateArray[i] = binaryString.charCodeAt(i);
+                    }
+                    emulator.loadState(stateArray);
                 }
-            }, SAVE_INTERVAL);
+
+                // Auto-save Loop every 15 seconds
+                setInterval(() => {
+                    if (emulator) emulator.saveState();
+                }, 15000);
+
+                // Kick off hyper-optimized render loop
+                function tick() {
+                    emulator.runFrame();
+                    requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+
+            } catch (err) {
+                console.error("Emulator core crash:", err);
+            }
+        }
+
+        // --- INPUT MAPPING ENGINE ---
+        const BUTTON_A = 0;
+        const BUTTON_B = 1;
+        const BUTTON_SELECT = 2;
+        const BUTTON_START = 3;
+        const DPAD_UP = 4;
+        const DPAD_DOWN = 5;
+        const DPAD_LEFT = 6;
+        const DPAD_RIGHT = 7;
+
+        // Desktop Keyboard Controls
+        const keyMap = {
+            'space': BUTTON_A,
+            'z': BUTTON_B,
+            'shift': BUTTON_SELECT,
+            'enter': BUTTON_START,
+            'arrowup': DPAD_UP,
+            'arrowdown': DPAD_DOWN,
+            'arrowleft': DPAD_LEFT,
+            'arrowright': DPAD_RIGHT
         };
-    </script>
 
-    <script type="text/javascript" src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
-
-    <script type="text/javascript">
-        // --- UNIVERSAL HYBRID INPUT ENGINE ---
-        window.addEventListener('DOMContentLoaded', () => {
-            const gameContainer = document.getElementById('game');
-            gameContainer.addEventListener('contextmenu', (e) => e.preventDefault());
-
-            // 1. Mobile Tap Engine (Overrides default mobile tap lag)
-            gameContainer.addEventListener('touchstart', (e) => {
-                if (typeof __EJS_emulator === 'undefined') return;
-                if (e.target.closest('.button') || e.target.closest('#menu') || e.target.closest('.ejs-menu')) return;
-                
+        window.addEventListener('keydown', (e) => {
+            initAudio();
+            const key = e.key.toLowerCase() === ' ' ? 'space' : e.key.toLowerCase();
+            if (emulator && keyMap[key] !== undefined) {
                 e.preventDefault();
-                __EJS_emulator.gamepad_set_button(0, 8, 1); // Screen Tap -> NES A
-            }, { passive: false });
-
-            gameContainer.addEventListener('touchend', (e) => {
-                if (typeof __EJS_emulator === 'undefined') return;
-                if (e.target.closest('.button') || e.target.closest('#menu') || e.target.closest('.ejs-menu')) return;
-                
-                e.preventDefault();
-                __EJS_emulator.gamepad_set_button(0, 8, 0);
-            }, { passive: false });
-
-            // 2. Desktop Mouse Click Engine (Left/Right Click bindings)
-            gameContainer.addEventListener('mousedown', (e) => {
-                if (typeof __EJS_emulator === 'undefined') return;
-                if (e.button === 0) __EJS_emulator.gamepad_set_button(0, 8, 1);      // Left Click -> NES A
-                else if (e.button === 2) __EJS_emulator.gamepad_set_button(0, 0, 1); // Right Click -> NES B
-            });
-
-            gameContainer.addEventListener('mouseup', (e) => {
-                if (typeof __EJS_emulator === 'undefined') return;
-                if (e.button === 0) __EJS_emulator.gamepad_set_button(0, 8, 0);
-                else if (e.button === 2) __EJS_emulator.gamepad_set_button(0, 0, 0);
-            });
+                emulator.setButton(0, keyMap[key], true);
+            }
         });
-    </script>
 
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase() === ' ' ? 'space' : e.key.toLowerCase();
+            if (emulator && keyMap[key] !== undefined) {
+                emulator.setButton(0, keyMap[key], false);
+            }
+        });
+
+        // Mouse Controls
+        window.addEventListener('mousedown', (e) => {
+            initAudio();
+            if (!emulator) return;
+            if (e.button === 0) emulator.setButton(0, BUTTON_A, true);
+            if (e.button === 2) emulator.setButton(0, BUTTON_B, true);
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!emulator) return;
+            if (e.button === 0) emulator.setButton(0, BUTTON_A, false);
+            if (e.button === 2) emulator.setButton(0, BUTTON_B, false);
+        });
+        window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Zero-Delay Mobile Touch Controls
+        window.addEventListener('touchstart', (e) => {
+            initAudio();
+            if (!emulator) return;
+            e.preventDefault();
+            emulator.setButton(0, BUTTON_A, true);
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            if (!emulator) return;
+            e.preventDefault();
+            emulator.setButton(0, BUTTON_A, false);
+        }, { passive: false });
+
+        // Trigger loading sequence on first interaction
+        window.addEventListener('click', () => {
+            initAudio();
+            if (!emulator) startEmulator();
+        }, { once: true });
+        window.addEventListener('touchstart', () => {
+            initAudio();
+            if (!emulator) startEmulator();
+        }, { once: true });
+    </script>
 </body>
 </html>
