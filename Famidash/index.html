@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Famidash - NES</title>
     <style>
-        /* Forces the game window to lock flawlessly to 100% of the screen */
         html, body {
             margin: 0;
             padding: 0;
@@ -13,6 +12,9 @@
             height: 100vh;
             background-color: #000;
             overflow: hidden;
+            /* Prevents the default browser right-click menu from popping up over the game */
+            user-select: none;
+            -webkit-user-select: none;
         }
         #game {
             width: 100%;
@@ -27,16 +29,55 @@
     <script type="text/javascript">
         EJS_player = '#game'; 
         EJS_core = 'nes';
-        
-        // This targets the exact raw data of your Famidash game file
         EJS_gameUrl = 'https://raw.githubusercontent.com/BasicallyDevYT/main/main/Famidash/Famidash.nes'; 
         
-        // Audio & Startup configurations
         EJS_startOnLoaded = true; 
         EJS_Volume = 1.0;         
         
-        // Highly stable CDN for core files to bypass strict security barriers
+        // --- KEYBOARD MAPPING CONFIGURATION ---
+        EJS_buttons = {
+            p1_up: 'ArrowUp',
+            p1_down: 'ArrowDown',
+            p1_left: 'ArrowLeft',
+            p1_right: 'ArrowRight',
+            p1_a: 'Space',       // A Button: Spacebar
+            p1_b: 'KeyZ',        // B Button: Z Key (Backup fallback for Mouse Right Click)
+            p1_start: 'Enter',   // Start: Enter
+            p1_select: 'Shift'   // Select: Accepts any Shift key
+        };
+
         EJS_pathtodata = 'https://rawcdn.githack.com/EmulatorJS/EmulatorJS/main/data/';
+
+        // --- MOUSE CLICK INPUT ENGINE ---
+        // This hooks into your browser window to convert mouse clicks into emulator interactions
+        window.addEventListener('DOMContentLoaded', () => {
+            const gameContainer = document.getElementById('game');
+
+            // 1. Block right click menu context so it doesn't break gameplay
+            gameContainer.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // 2. Mouse Press down
+            gameContainer.addEventListener('mousedown', (e) => {
+                if (typeof __EJS_emulator === 'undefined') return;
+                
+                if (e.button === 0) { // Left Click -> Press NES A
+                    __EJS_emulator.gamepad_set_button(0, 0, 1); 
+                } else if (e.button === 2) { // Right Click -> Press NES B
+                    __EJS_emulator.gamepad_set_button(0, 1, 1);
+                }
+            });
+
+            // 3. Mouse Release up
+            gameContainer.addEventListener('mouseup', (e) => {
+                if (typeof __EJS_emulator === 'undefined') return;
+
+                if (e.button === 0) { // Release Left Click -> Stop NES A
+                    __EJS_emulator.gamepad_set_button(0, 0, 0);
+                } else if (e.button === 2) { // Release Right Click -> Stop NES B
+                    __EJS_emulator.gamepad_set_button(0, 1, 0);
+                }
+            });
+        });
     </script>
 
     <script type="text/javascript" src="https://rawcdn.githack.com/EmulatorJS/EmulatorJS/main/data/loader.js"></script>
