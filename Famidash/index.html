@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Famidash - TEST BUILD 1</title>
+    <title>Famidash - TEST BUILD 2</title>
     <style>
         html, body {
             margin: 0;
@@ -29,7 +29,7 @@
         // --- COOKIE ENGINE FUNCTIONS ---
         function setGameCookie(name, value) {
             const date = new Date();
-            date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 Year Expiration
+            date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000));
             document.cookie = name + "=" + encodeURIComponent(value) + "; expires=" + date.toUTCString() + "; path=/; SameSite=Strict";
         }
 
@@ -41,8 +41,6 @@
         // --- CORE EMULATOR SETUP ---
         EJS_player = '#game';
         EJS_core = 'nes';
-        
-        // The NES game file stays securely hosted on your GitHub server
         EJS_gameUrl = 'https://basicallydevyt.github.io/main/Famidash/Famidash.nes'; 
         
         EJS_gameName = 'Famidash'; 
@@ -50,22 +48,19 @@
         EJS_startOnLoaded = true;
         EJS_Volume = 1.0;        
         
-        // --- DEFAULT KEYBINDS ---
-        const defaultLayout = { 
-            0: { 
-                0: { 'value': 'space', 'value2': 'BUTTON_1' },      // A: Spacebar
-                1: { 'value': 'z', 'value2': 'BUTTON_2' },          // B: Z Key
-                2: { 'value': 'shift', 'value2': 'BUTTON_9' },      // Select: Shift
-                3: { 'value': 'enter', 'value2': 'BUTTON_10' },     // Start: Enter
-                4: { 'value': 'up arrow', 'value2': 'DPAD_UP' },    // D-Pad Up
-                5: { 'value': 'down arrow', 'value2': 'DPAD_DOWN' },// D-Pad Down
-                6: { 'value': 'left arrow', 'value2': 'DPAD_LEFT' },// D-Pad Left
-                7: { 'value': 'right arrow', 'value2': 'DPAD_RIGHT'}// D-Pad Right
-            }
+        // Safe flat layout structure to prevent compilation array crashes
+        const defaultLayout = {
+            'player-1-up': 'ArrowUp',
+            'player-1-down': 'ArrowDown',
+            'player-1-left': 'ArrowLeft',
+            'player-1-right': 'ArrowRight',
+            'player-1-a': 'Space',
+            'player-1-b': 'KeyZ',
+            'player-1-select': 'ShiftLeft',
+            'player-1-start': 'Enter'
         };
 
         // --- COOKIE CONFIGURATION LOADER ---
-        // Checks if you have custom configuration data in your cookies, otherwise uses defaultLayout
         const savedConfig = getGameCookie('famidash_config_data');
         if (savedConfig) {
             try {
@@ -79,10 +74,9 @@
 
         EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
 
-        // Hook: Fires if you change your button settings inside the emulator menu
+        // Hook: Safely records configuration changes back to your cookie file
         EJS_onSaveConfiguration = function(config) {
             if (config) {
-                // Instantly saves your new configurations into the cookie profile
                 setGameCookie('famidash_config_data', JSON.stringify(config));
             }
         };
