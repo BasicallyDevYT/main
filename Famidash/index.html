@@ -48,9 +48,8 @@
         EJS_startOnLoaded = true;
         EJS_Volume = 1.0;        
 
-        // Performance Flags
-        EJS_threads = true;       // Unlocks multi-core threading loops if server headers are live
-        EJS_browserMode = 1;     // Optimizes UI canvas scaling for mobile and web frames
+        // SAFE PERFORMANCE CONFIGURATION (No custom server headers required)
+        EJS_threads = false;       
 
         // --- BINARY PROGRESS AUTO-LOADER LAYER ---
         const GAME_KEY = "EJS_AUTOSAVE_Famidash";
@@ -112,7 +111,7 @@
 
         // --- NON-BLOCKING ASYNC BACKGROUND AUTO-SAVE ENGINE ---
         EJS_onGameStart = function() {
-            const SAVE_INTERVAL = 15000; // 15 seconds to minimize frame drops on weaker CPUs
+            const SAVE_INTERVAL = 15000; 
             
             setInterval(() => {
                 try {
@@ -120,7 +119,6 @@
                         const stateData = window.__EJS_emulator.gameManager.getState();
                         
                         if (stateData && stateData.length > 0) {
-                            // Uses async FileReader blob mapping to prevent garbage collection spikes
                             const blob = new Blob([stateData], {type: 'application/octet-stream'});
                             const reader = new FileReader();
                             
@@ -150,25 +148,24 @@
             const gameContainer = document.getElementById('game');
             gameContainer.addEventListener('contextmenu', (e) => e.preventDefault());
 
-            // 1. Mobile Tap Engine (Overrides default touch lag to tap immediately)
+            // 1. Mobile Tap Engine (Overrides default mobile tap lag)
             gameContainer.addEventListener('touchstart', (e) => {
                 if (typeof __EJS_emulator === 'undefined') return;
-                // If the user taps a built-in menu button, allow standard browser behavior
-                if (e.target.closest('.button') || e.target.closest('#menu')) return;
+                if (e.target.closest('.button') || e.target.closest('#menu') || e.target.closest('.ejs-menu')) return;
                 
                 e.preventDefault();
-                __EJS_emulator.gamepad_set_button(0, 8, 1); // Tap screen -> Map to NES A
+                __EJS_emulator.gamepad_set_button(0, 8, 1); // Screen Tap -> NES A
             }, { passive: false });
 
             gameContainer.addEventListener('touchend', (e) => {
                 if (typeof __EJS_emulator === 'undefined') return;
-                if (e.target.closest('.button') || e.target.closest('#menu')) return;
+                if (e.target.closest('.button') || e.target.closest('#menu') || e.target.closest('.ejs-menu')) return;
                 
                 e.preventDefault();
                 __EJS_emulator.gamepad_set_button(0, 8, 0);
             }, { passive: false });
 
-            // 2. Desktop Mouse Click Engine (Preserves Left/Right Click layout)
+            // 2. Desktop Mouse Click Engine (Left/Right Click bindings)
             gameContainer.addEventListener('mousedown', (e) => {
                 if (typeof __EJS_emulator === 'undefined') return;
                 if (e.button === 0) __EJS_emulator.gamepad_set_button(0, 8, 1);      // Left Click -> NES A
