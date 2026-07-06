@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Full Screen NES Emulator</title>
+    <title>Famidash - NES</title>
     <style>
-        /* Eliminates all margins, scrollbars, and forces the game to occupy 100% of the screen viewport */
+        /* Forces the game window to lock flawlessly to 100% of the screen */
         html, body {
             margin: 0;
             padding: 0;
@@ -22,28 +22,24 @@
 </head>
 <body>
 
-    <!-- This div fills 100% of your screen -->
     <div id="game"></div>
 
     <script type="text/javascript">
         EJS_player = '#game'; 
         EJS_core = 'nes';
         
-        // Point this to your NES file inside your repository
-        EJS_gameUrl = 'mygame.nes'; 
+        // This targets the exact raw data of your Famidash game file
+        EJS_gameUrl = 'https://raw.githubusercontent.com/BasicallyDevYT/main/main/Famidash/Famidash.nes'; 
         
-        // --- AUDIO CONFIGURATION ---
-        // Modern web browsers block audio from playing automatically until a user clicks something. 
-        // These settings tell EmulatorJS to explicitly turn on audio the exact millisecond the user interacts with the page.
-        EJS_startOnLoaded = true; // Instantly starts the game engine once downloaded
-        EJS_Volume = 1.0;         // Sets full baseline volume (1.0 = 100%)
+        // Audio & Startup configurations
+        EJS_startOnLoaded = true; 
+        EJS_Volume = 1.0;         
         
-        // CDN data path for the core emulator files
-        EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/'; 
+        // Highly stable CDN for core files to bypass strict security barriers
+        EJS_pathtodata = 'https://rawcdn.githack.com/EmulatorJS/EmulatorJS/main/data/';
     </script>
 
-    <!-- Load the main EmulatorJS engine -->
-    <script type="text/javascript" src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+    <script type="text/javascript" src="https://rawcdn.githack.com/EmulatorJS/EmulatorJS/main/data/loader.js"></script>
 
 </body>
 </html>
