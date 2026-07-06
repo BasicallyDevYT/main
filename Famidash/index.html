@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Famidash - TEST BUILD 4</title>
+    <title>Famidash - TEST BUILD 5</title>
     <style>
         html, body {
             margin: 0;
@@ -47,7 +47,7 @@
         EJS_gameID = 99124;        
         EJS_startOnLoaded = true;
         EJS_Volume = 1.0;        
-        
+
         // --- HARDWARE ENGINE CONTROL KEYBINDS ---
         const defaultLayout = { 
             0: { 
@@ -85,6 +85,37 @@
                 setGameCookie('famidash_config_data', JSON.stringify(config));
             }
         };
+
+        // --- FULL AUTOMATIC SAVE/LOAD SYSTEM ---
+        EJS_onGameStart = function() {
+            // Check if an auto-save exists inside browser local memory
+            const automaticSave = localStorage.getItem('famidash_auto_snapshot');
+            if (automaticSave && typeof __EJS_emulator !== 'undefined') {
+                setTimeout(() => {
+                    try {
+                        __EJS_emulator.loadState(automaticSave);
+                        console.log("Auto-save loaded successfully!");
+                    } catch(e) {
+                        console.error("Auto-load deferred:", e);
+                    }
+                }, 1500); // Gives the core a 1.5-second warm-up buffer
+            }
+
+            // Fire an background engine sync interval every 5 seconds
+            setInterval(() => {
+                if (typeof __EJS_emulator !== 'undefined' && typeof __EJS_emulator.gameManager !== 'undefined') {
+                    try {
+                        // Grab live state directly from emulation memory structure
+                        const liveState = __EJS_emulator.gameManager.getState();
+                        if (liveState) {
+                            localStorage.setItem('famidash_auto_snapshot', liveState);
+                        }
+                    } catch(err) {
+                        // Core busy or frames syncing, skip step safely
+                    }
+                }
+            }, 5000); 
+        };
     </script>
 
     <script type="text/javascript" src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
@@ -97,8 +128,8 @@
 
             gameContainer.addEventListener('mousedown', (e) => {
                 if (typeof __EJS_emulator === 'undefined') return;
-                if (e.button === 0) __EJS_emulator.gamepad_set_button(0, 8, 1); // Left Click -> NES A (Index 8)
-                else if (e.button === 2) __EJS_emulator.gamepad_set_button(0, 0, 1); // Right Click -> NES B (Index 0)
+                if (e.button === 0) __EJS_emulator.gamepad_set_button(0, 8, 1); 
+                else if (e.button === 2) __EJS_emulator.gamepad_set_button(0, 0, 1); 
             });
 
             gameContainer.addEventListener('mouseup', (e) => {
