@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Famidash - TEST BUILD 3</title>
+    <title>Famidash - TEST BUILD 4</title>
     <style>
         html, body {
             margin: 0;
@@ -48,7 +48,7 @@
         EJS_startOnLoaded = true;
         EJS_Volume = 1.0;        
         
-        // --- HARDWARE ENGINE CONTROL KEYBINDS (DOCUMENTATION FORMAT) ---
+        // --- HARDWARE ENGINE CONTROL KEYBINDS ---
         const defaultLayout = { 
             0: { 
                 0: { 'value': 'z', 'value2': 'BUTTON_2' },          // Index 0: NES B -> Z Key
@@ -69,17 +69,17 @@
         const savedConfig = getGameCookie('famidash_config_data');
         if (savedConfig) {
             try {
-                EJS_Settings = JSON.parse(savedConfig);
+                EJS_defaultControls = JSON.parse(savedConfig);
             } catch(e) {
-                EJS_Settings = defaultLayout;
+                EJS_defaultControls = defaultLayout;
             }
         } else {
-            EJS_Settings = defaultLayout;
+            EJS_defaultControls = defaultLayout;
         }
 
         EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
 
-        // Hook: Safely records configuration changes back to your cookie file
+        // Hook: Records setting adjustments back to the cookie stream
         EJS_onSaveConfiguration = function(config) {
             if (config) {
                 setGameCookie('famidash_config_data', JSON.stringify(config));
