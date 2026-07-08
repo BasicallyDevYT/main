@@ -47,7 +47,8 @@
 
         // --- CORE EMULATOR SETUP ---
         EJS_player = '#game';
-        EJS_core = 'nes';
+        EJS_core = 'nes';               // <-- Keep this as 'nes' so it knows the console type
+        EJS_coreName = 'nestopia';       // <-- This is the hidden setting that switches the engine from FCEUmm to Nestopia
         EJS_gameUrl = './Famidash.nes';
         
         EJS_gameName = 'Famidash'; 
