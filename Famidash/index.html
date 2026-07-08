@@ -48,7 +48,7 @@
         // --- CORE EMULATOR SETUP ---
         EJS_player = '#game';
         EJS_core = 'nes';
-        EJS_gameUrl = 'https://basicallydevyt.github.io/main/Famidash/Famidash.nes'; 
+        EJS_gameUrl = 'https://raw.githubusercontent.com/BasicallyDevYT/main/master/Famidash/Famidash.nes';
         
         EJS_gameName = 'Famidash'; 
         EJS_gameID = 99124;        
@@ -57,7 +57,7 @@
         // --- PERFORMANCE STRIP ENGINE ---
         EJS_threads = false;          // Safe single-core fallback execution
         EJS_mouseLens = false;        // Disables heavy visual mouse zoom shaders
-        EJS_biliunerFilter = false;   // Shuts off smoothing filters (increases framerate)
+        EJS_bilinearFilter = false;   // <-- FIXED TYPO HERE (Shuts off smoothing filters)
         EJS_scale = 1;                // Keeps rendering bounds native to prevent GPU scaling lag
 
         // --- BINARY PROGRESS AUTO-LOADER LAYER ---
