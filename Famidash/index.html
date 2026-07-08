@@ -47,9 +47,8 @@
 
         // --- CORE EMULATOR SETUP ---
         EJS_player = '#game';
-        EJS_core = 'nes';               // <-- Keep this as 'nes' so it knows the console type
-        EJS_coreName = 'nestopia';       // <-- This is the hidden setting that switches the engine from FCEUmm to Nestopia
-        EJS_gameUrl = 'https://github.com/BasicallyDevYT/main/raw/refs/heads/main/Famidash/Famidash.nes';
+        EJS_core = 'nes';
+        EJS_gameUrl = './Famidash/Famidash.nes'; 
         
         EJS_gameName = 'Famidash'; 
         EJS_gameID = 99124;        
@@ -58,7 +57,7 @@
         // --- PERFORMANCE STRIP ENGINE ---
         EJS_threads = false;          // Safe single-core fallback execution
         EJS_mouseLens = false;        // Disables heavy visual mouse zoom shaders
-        EJS_bilinearFilter = false;   // <-- FIXED TYPO HERE (Shuts off smoothing filters)
+        EJS_bilinearFilter = false;   // Shuts off smoothing filters (increases framerate)
         EJS_scale = 1;                // Keeps rendering bounds native to prevent GPU scaling lag
 
         // --- BINARY PROGRESS AUTO-LOADER LAYER ---
