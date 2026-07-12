@@ -12,11 +12,13 @@
         text-align: center;
         padding: 40px 20px;
         margin: 0;
+        position: relative;
       }
 
       h1 {
         font-size: 2.5rem;
         margin-bottom: 10px;
+        margin-top: 60px; /* Pushes header down slightly to clear space for the login system */
       }
 
       p {
@@ -112,9 +114,104 @@
         transform: translateY(-2px);
         box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; /* Clean Red Glow */
       }
+
+      /* --- TOP RIGHT CORNER AUTH HOOK LAYOUTS --- */
+      .auth-corner-widget {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+      }
+
+      /* Blue Standard Login Button */
+      .top-login-btn {
+        background-color: #1a73e8;
+        color: #ffffff;
+        text-decoration: none;
+        padding: 10px 20px;
+        font-weight: bold;
+        font-size: 0.95rem;
+        border-radius: 4px;
+        display: inline-block;
+        transition: background-color 0.2s, transform 0.2s;
+      }
+
+      .top-login-btn:hover {
+        background-color: #1557b0;
+        transform: translateY(-1px);
+      }
+
+      /* Profile Layout Label (Icon Right, Name Left) */
+      .user-profile-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #252525;
+        padding: 6px 14px 6px 18px;
+        border-radius: 30px;
+        border: 1px solid #333;
+      }
+
+      .user-profile-label .username {
+        font-weight: bold;
+        font-size: 0.95rem;
+        color: #ffffff;
+      }
+
+      .user-profile-label .avatar-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #444;
+      }
     </style>
+
+    <script>
+      // --- Cookie Extraction Engine ---
+      function getSharedCookie(name) {
+        let nameEQ = name + "=";
+        let ca = document.cookie.split(';');
+        for(let i=0; i < ca.length; i++) {
+          let c = ca[i];
+          while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+          if (c.indexOf(nameEQ) == 0) {
+            try {
+              return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+            } catch(e) {
+              return null;
+            }
+          }
+        }
+        return null;
+      }
+
+      // --- Runtime Auth Visual Evaluator ---
+      window.addEventListener('DOMContentLoaded', function() {
+        const activeSession = getSharedCookie('user_session');
+        const container = document.getElementById('auth-corner');
+
+        if (activeSession) {
+          // User is logged in: Generate the layout matching your mockup structure (Name on left, Icon on right)
+          container.innerHTML = `
+            <div class="user-profile-label">
+              <span class="username">${activeSession.name}</span>
+              <img class="avatar-circle" src="${activeSession.avatar}" alt="User Profile Image" style="border: 2px solid ${activeSession.provider === 'discord' ? '#5865F2' : '#4caf50'};">
+            </div>
+          `;
+        } else {
+          // Not logged in: Build clean blue destination redirect button
+          container.innerHTML = `
+            <a href="https://basicallydevyt.github.io/main/AccountService/?return=main" class="top-login-btn">Sign in</a>
+          `;
+        }
+      });
+    </script>
   </head>
   <body>
+
+    <div id="auth-corner" class="auth-corner-widget"></div>
+
     <h1>Dev's website</h1>
     <p>
       Hi everyone! This is my Website.<br>
@@ -126,7 +223,6 @@
       The channel tab is not guaranteed to work perfectly.
     </p>
     
-    <!-- SECTION 1: Standard No-Class Buttons -->
     <div class="section-title">Links</div>
     <div class="button-container">
       <a href="https://basicallydevyt.github.io/main/OldContent"><button>Go to Old Content page</button></a>
@@ -136,7 +232,6 @@
 
     <hr>
 
-    <!-- SECTION 2: Discord Buttons -->
     <div class="section-title">Discord related links</div>
     <div class="button-container">
       <a href="https://basicallydevyt.github.io/main/TermsOfService"><button class="discord-btn">Discord Server Terms of Service</button></a>
@@ -145,7 +240,6 @@
 
     <hr>
 
-    <!-- SECTION 3: Warning Buttons -->
     <div class="section-title">Dangerous links</div>
     <div class="button-container">
       <a href="https://basicallydevyt.github.io/main/Channel"><button class="warning-btn">Go to channel page</button></a>
