@@ -10,13 +10,27 @@
         background-color: #1a1a1a;
         color: #ffffff;
         text-align: center;
-        padding: 20px;
+        padding: 40px 20px;
+        margin: 0;
+        position: relative;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        margin-top: 80px; /* Pushed down to clear clean structural space for the auth card stack */
+      }
+
+      p {
+        font-size: 1.1rem;
+        color: #cccccc;
+        line-height: 1.6;
       }
 
       .audio-container {
         position: absolute;
         top: 20px;
-        right: 20px;
+        left: 20px; /* Kept on the left side to stay completely out of the way of our login system */
       }
 
       #music-btn {
@@ -53,10 +67,6 @@
         text-align: left;
       }
 
-      .card.short-card {
-        width: 220px;
-      }
-
       .card img {
         width: 100%;
         border-radius: 6px;
@@ -91,17 +101,103 @@
         border-radius: 6px;
       }
 
-      .card.short-card .fallback-box {
-        height: 320px;
+      /* Home Navigation Button Layout Style override */
+      button.home-return-btn {
+        background-color: #2b2b2b;
+        color: #ffffff;
+        border: none;
+        padding: 12px 28px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
       }
 
-      button {
+      button.home-return-btn:hover {
+        background-color: #4a4a4a;
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+      }
+
+      /* --- TOP RIGHT CORNER AUTH HOOK LAYOUTS --- */
+      .auth-corner-widget {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+      /* Blue Standard Login Button */
+      .top-login-btn {
+        background-color: #1a73e8;
+        color: #ffffff;
+        text-decoration: none;
         padding: 10px 20px;
+        font-weight: bold;
+        font-size: 0.95rem;
+        border-radius: 4px;
+        display: inline-block;
+        transition: background-color 0.2s, transform 0.2s;
+      }
+
+      .top-login-btn:hover {
+        background-color: #1557b0;
+        transform: translateY(-1px);
+      }
+
+      /* Profile Layout Label (Icon Right, Name Left) */
+      .user-profile-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #252525;
+        padding: 6px 14px 6px 18px;
+        border-radius: 30px;
+        border: 1px solid #333;
+      }
+
+      .user-profile-label .username {
+        font-weight: bold;
+        font-size: 0.95rem;
+        color: #ffffff;
+      }
+
+      .user-profile-label .avatar-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #444;
+      }
+
+      /* Compact Sign Out Button Element underneath profile */
+      .top-signout-btn {
+        background-color: #d93025;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
         cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .top-signout-btn:hover {
+        background-color: #b3241c;
       }
     </style>
   </head>
   <body>
+
+    <div id="auth-corner" class="auth-corner-widget"></div>
+
     <div class="audio-container">
         <button id="music-btn" onclick="toggleMusic()">Play Music</button>
         <audio id="bg-music" src="./bgmusic.mp3" loop></audio>
@@ -110,35 +206,67 @@
     <h1>My channel</h1>
     <p>This is my page about my Youtube channel!</p>
     
-    <a href="https://basicallydevyt.github.io/main/"><button>Go to back home</button></a>
+    <a href="https://basicallydevyt.github.io/main/"><button class="home-return-btn">Go to back home</button></a>
 
     <div class="media-row">
         <div class="card" id="recent-video-card">
             <div class="badge offline">LATEST VIDEO</div>
             <div id="video-content">Loading latest video...</div>
         </div>
-        <div class="card short-card" id="recent-short-card">
-            <div class="badge offline">SHORTS</div>
-            <div id="short-content">Loading latest short...</div>
-        </div>
-    </div>
-
-    <div class="media-row">
         <div class="card" id="recent-stream-card">
             <div class="badge offline">RECENT LIVE</div>
             <div id="recent-stream-content">Loading recent stream...</div>
         </div>
-        <div class="card" id="live-stream-card">
-            <div id="stream-badge" class="badge offline">OFFLINE</div>
-            <div id="stream-content">Checking stream status...</div>
-        </div>
     </div>
 
-<script>
-        const API_KEY = 'AIzaSyDl7_5Yum1o0Gru_UBdZH2S1B4bCnit-ag'; 
-        const CHANNEL_ID = 'UCl-kI-6ma1msmRe9Ti0CHtA'; 
-        const UPLOADS_PLAYLIST_ID = 'UUl-kI-6ma1msmRe9Ti0CHtA';  
+    <script>
+        // --- Cookie Extraction & Management Engine ---
+        function getSharedCookie(name) {
+          let nameEQ = name + "=";
+          let ca = document.cookie.split(';');
+          for(let i=0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) {
+              try {
+                return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+              } catch(e) {
+                return null;
+              }
+            }
+          }
+          return null;
+        }
 
+        function deleteSharedCookie(name) {
+          document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
+
+        function handleWidgetSignOut() {
+          deleteSharedCookie('user_session');
+          window.location.reload();
+        }
+
+        function renderAuthWidget() {
+          const activeSession = getSharedCookie('user_session');
+          const container = document.getElementById('auth-corner');
+
+          if (activeSession) {
+            container.innerHTML = `
+              <div class="user-profile-label">
+                <span class="username">${activeSession.name}</span>
+                <img class="avatar-circle" src="${activeSession.avatar}" alt="User Profile Image" style="border: 2px solid ${activeSession.provider === 'discord' ? '#5865F2' : '#4caf50'};">
+              </div>
+              <button class="top-signout-btn" onclick="handleWidgetSignOut()">Sign out</button>
+            `;
+          } else {
+            container.innerHTML = `
+              <a href="https://basicallydevyt.github.io/main/AccountService/?return=main/Channel" class="top-login-btn">Sign in</a>
+            `;
+          }
+        }
+
+        // --- Core Media Controls (Audio Engine) ---
         function toggleMusic() {
             const audio = document.getElementById('bg-music');
             const btn = document.getElementById('music-btn');
@@ -151,31 +279,22 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const audio = document.getElementById('bg-music');
-            const btn = document.getElementById('music-btn');
-            audio.play().then(() => {
-                btn.innerText = "Pause Music";
-            }).catch((error) => {
-                btn.innerText = "Play Music";
-            });
-        });
+        // --- Data Retrieval Engine Configuration ---
+        const API_KEY = 'AIzaSyDl7_5Yum1o0Gru_UBdZH2S1B4bCnit-ag'; 
+        const CHANNEL_ID = 'UCl-kI-6ma1msmRe9Ti0CHtA'; 
+        const UPLOADS_PLAYLIST_ID = 'UUl-kI-6ma1msmRe9Ti0CHtA';  
         
         async function loadChannelData() {
             const videoDiv = document.getElementById('video-content');
-            const shortDiv = document.getElementById('short-content');
             const streamDiv = document.getElementById('recent-stream-content');
-            const liveDiv = document.getElementById('stream-content');
-            const liveBadge = document.getElementById('stream-badge');
 
-            // 1. Fetch recent uploads & shorts (Cost = 1 unit)
+            // 1. Fetch recent traditional clean video upload
             const playlistUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=${UPLOADS_PLAYLIST_ID}&key=${API_KEY}`;
             
             try {
                 const response = await fetch(playlistUrl);
                 if (response.status === 403) {
                     showError('video-content', "API Error 1: Permission Denied");
-                    showError('short-content', "API Error 1: Permission Denied");
                     return;
                 }
                 
@@ -183,56 +302,35 @@
                 const items = data.items || [];
 
                 if (items.length > 0) {
-                    // Reset the inner HTML text so it wipes out "Loading latest short..." completely
-                    shortDiv.innerHTML = "";
-
                     let foundLatestVideo = false;
-                    let foundShort = false;
 
                     for (let item of items) {
                         const snip = item.snippet;
                         const isShort = snip.title.toLowerCase().includes('#shorts') || snip.description.toLowerCase().includes('#shorts');
                         const isStream = snip.title.toLowerCase().includes('stream') || snip.title.toLowerCase().includes('live');
                         
-                        // Grab the first true normal video
+                        // Grab the first clean, real upload video
                         if (!isShort && !isStream && !foundLatestVideo) {
                             const latestId = snip.resourceId.videoId;
                             videoDiv.innerHTML = createVideoHTML(latestId, snip.thumbnails.medium?.url || snip.thumbnails.default?.url, snip.title);
                             foundLatestVideo = true;
-                        }
-                        
-                        // Grab the first true short without checking layout contents
-                        if (isShort && !foundShort) {
-                            const shortId = snip.resourceId.videoId;
-                            shortDiv.innerHTML = `
-                                <a href="https://www.youtube.com/shorts/${shortId}" target="_blank" style="text-decoration: none; color: inherit;">
-                                    <div style="overflow: hidden; height: 320px; border-radius: 6px;">
-                                        <img src="${snip.thumbnails.high?.url || snip.thumbnails.medium?.url}" style="object-fit: cover; height: 100%;">
-                                    </div>
-                                    <h3>${snip.title}</h3>
-                                </a>`;
-                            foundShort = true;
+                            break;
                         }
                     }
                     
-                    // Fallback if no specific clean video types were tracked in the array list response
+                    // Fallback to absolute array zero if no clean strings parsed
                     if (!foundLatestVideo) {
                         const latestId = items[0].snippet.resourceId.videoId;
                         videoDiv.innerHTML = createVideoHTML(latestId, items[0].snippet.thumbnails.medium?.url || items[0].snippet.thumbnails.default?.url, items[0].snippet.title);
                     }
-                    if (!foundShort) {
-                        showError('short-content', "No recent shorts found");
-                    }
                 } else {
                     showError('video-content', "No uploads discovered");
-                    showError('short-content', "No shorts discovered");
                 }
             } catch (err) {
                 showError('video-content', "API Error 2: Connection Failed");
-                showError('short-content', "API Error 2: Connection Failed");
             }
 
-            // 2. Fetch Recent Live Streams via Activities (Cost = 1 unit)
+            // 2. Fetch Recent Stream Archive via Activities API
             const activitiesUrl = `https://www.googleapis.com/youtube/v3/activities?part=snippet,contentDetails&channelId=${CHANNEL_ID}&maxResults=15&key=${API_KEY}`;
             try {
                 const response = await fetch(activitiesUrl);
@@ -271,18 +369,9 @@
                 if (!foundRecentStream) {
                     showError('recent-stream-content', "No completed live stream archives found");
                 }
-
             } catch (err) {
                 showError('recent-stream-content', "API Error 2: Connection Failed");
             }
-
-            // 3. Setup Default Live Stream Status View
-            liveBadge.innerText = "OFFLINE";
-            liveBadge.className = "badge offline";
-            liveDiv.innerHTML = `
-                <a href="https://www.youtube.com/@Basically_DevYT/live" target="_blank" style="text-decoration: none; color: inherit;">
-                    <div class="fallback-box"></div><h3>Not currently streaming live right now</h3>
-                </a>`;
         }
 
         function createVideoHTML(id, thumb, title) {
@@ -300,7 +389,19 @@
                 </a>`;
         }
 
-        loadChannelData();
+        // Initializer block runs on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderAuthWidget();
+            loadChannelData();
+
+            const audio = document.getElementById('bg-music');
+            const btn = document.getElementById('music-btn');
+            audio.play().then(() => {
+                btn.innerText = "Pause Music";
+            }).catch((error) => {
+                btn.innerText = "Play Music";
+            });
+        });
     </script>
   </body>
 </html>
