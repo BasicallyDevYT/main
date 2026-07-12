@@ -11,7 +11,7 @@
     const DISCORD_CLIENT_ID = '1525897516854415450';
     const REDIRECT_URI = 'https://basicallydevyt.github.io/main/AccountService/'; 
 
-    // --- Cookie Controls ---
+    // --- Cookie Controls (Strictly Path-Locked) ---
     function setSharedCookie(name, value, days) {
       let expires = "";
       if (days) {
@@ -57,17 +57,66 @@
       document.getElementById('user-avatar').style.borderColor = user.provider === 'discord' ? '#5865F2' : '#4caf50';
     }
 
-    // --- Discord Popup Method Fix ---
+    // --- Discord Popup Implementation & COOP Bypass ---
     function openDiscordPopup() {
       const url = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify%20email`;
       const width = 500, height = 750;
       const left = (window.screen.width / 2) - (width / 2);
       const top = (window.screen.height / 2) - (height / 2);
       
-      window.open(url, "DiscordAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
+      const popup = window.open(url, "DiscordAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
+      
+      // Poll the popup window every 500ms to bypass COOP postMessage blocks entirely
+      const pollTimer = setInterval(function() {
+        if (!popup || popup.closed) {
+          clearInterval(pollTimer);
+          return;
+        }
+        
+        try {
+          // Check if the popup redirected back to our domain path
+          if (popup.location.origin === window.location.origin && popup.location.hash) {
+            const fragment = new URLSearchParams(popup.location.hash.slice(1));
+            const accessToken = fragment.get('access_token');
+            
+            if (accessToken) {
+              clearInterval(pollTimer);
+              popup.close(); // Forcefully shut down the tiny window immediately
+              processDiscordToken(accessToken);
+            }
+          }
+        } catch (e) {
+          // Security errors are expected while the popup is still browsing on discord.com domain
+        }
+      }, 500);
     }
 
-    // --- Google Success Handler Defined Globally ---
+    // --- Fetch and Process Profile Data ---
+    function processDiscordToken(accessToken) {
+      fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+      .then(res => res.json())
+      .then(user => {
+        let avatarUrl = 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png';
+        if (user.avatar) {
+          avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+        }
+
+        const userData = {
+          name: user.username,
+          email: user.email || 'No verified email',
+          avatar: avatarUrl,
+          provider: 'discord'
+        };
+
+        setSharedCookie('user_session', userData, 7);
+        displayUserProfile(userData);
+      })
+      .catch(err => console.error("Discord profile extraction failed:", err));
+    }
+
+    // --- Google Success Handler ---
     window.handleCredentialResponse = function(response) {
       const responsePayload = parseJwt(response.credential);
       const userData = {
@@ -95,57 +144,15 @@
       window.location.reload();
     }
 
-    // --- App Initializer Engine ---
+    // --- App Initializer ---
     window.addEventListener('DOMContentLoaded', function() {
       const activeSession = getSharedCookie('user_session');
       if (activeSession) {
         displayUserProfile(activeSession);
-        return;
-      }
-
-      if (window.opener && window.location.hash) {
-        const fragment = new URLSearchParams(window.location.hash.slice(1));
-        const accessToken = fragment.get('access_token');
-        if (accessToken) {
-          window.opener.postMessage({ type: 'DISCORD_AUTH_SUCCESS', token: accessToken }, window.location.origin);
-          window.close();
-        }
-      }
-    });
-
-    // Cross-window popup response listener
-    window.addEventListener('message', function(event) {
-      if (event.origin !== window.location.origin) return;
-
-      if (event.data && event.data.type === 'DISCORD_AUTH_SUCCESS') {
-        const accessToken = event.data.token;
-        
-        fetch('https://discord.com/api/users/@me', {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        })
-        .then(res => res.json())
-        .then(user => {
-          let avatarUrl = 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png';
-          if (user.avatar) {
-            avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-          }
-
-          const userData = {
-            name: user.username,
-            email: user.email || 'No verified email',
-            avatar: avatarUrl,
-            provider: 'discord'
-          };
-
-          setSharedCookie('user_session', userData, 7);
-          displayUserProfile(userData);
-        })
-        .catch(err => console.error("Discord API retrieval breakdown:", err));
       }
     });
   </script>
 
-  <!-- Load Google Sign-In SDK after functions are declared -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
