@@ -45,7 +45,6 @@
       const returnTag = urlParams.get('return');
       
       if (returnTag) {
-        // Combines base link cleanly with your query string tag variable
         window.location.href = "https://basicallydevyt.github.io/" + returnTag;
       }
     }
@@ -119,7 +118,7 @@
 
         setSharedCookie('user_session', userData, 7);
         displayUserProfile(userData);
-        handleNavigationRedirect(); // Executes auto-forward routine instantly
+        handleNavigationRedirect(); 
       })
       .catch(err => console.error("Discord profile extraction failed:", err));
     }
@@ -136,9 +135,10 @@
 
       setSharedCookie('user_session', userData, 7);
       displayUserProfile(userData);
-      handleNavigationRedirect(); // Executes auto-forward routine instantly
+      handleNavigationRedirect(); 
     };
 
+    // --- Helper Token Parser ---
     function parseJwt(token) {
       var base64Url = token.split('.')[1];
       var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -158,6 +158,7 @@
       const activeSession = getSharedCookie('user_session');
       if (activeSession) {
         displayUserProfile(activeSession);
+        handleNavigationRedirect(); // <-- Added: Forwards them immediately if cookie exists!
       }
     });
   </script>
