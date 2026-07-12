@@ -18,13 +18,12 @@
         align-items: center;
         justify-content: flex-start;
         min-height: 100vh;
-        padding: 40px 20px;
+        padding: 80px 20px 40px 20px; /* Added extra top padding so header doesn't overlap title */
         margin: 0;
         box-sizing: border-box;
-        position: relative;
       }
 
-      /* --- Top Header Profile Layout --- */
+      /* --- Top Header Profile Layout (Locked Top Right) --- */
       .auth-header-bar {
         position: absolute;
         top: 20px;
@@ -32,7 +31,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        z-index: 10;
+        z-index: 100;
       }
 
       .discord-login-nav-btn {
@@ -80,22 +79,43 @@
         border: 2px solid #5865F2;
       }
 
+      .user-info-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
       .user-profile-widget span {
         font-size: 0.9rem;
         font-weight: bold;
         color: #e6edf3;
+        line-height: 1.2;
       }
 
+      .signout-link {
+        font-size: 0.8rem;
+        color: #ff5252;
+        text-decoration: none;
+        cursor: pointer;
+        font-weight: normal;
+        margin-top: 20px:
+      }
+      
+      .signout-link:hover {
+        text-decoration: underline;
+        color: #ff3333;
+      }
+
+      /* --- Content Layout --- */
       h1 {
         font-size: 2.5rem;
         color: #5865F2; /* Discord/Blurple Accent Blue */
-        margin-top: 40px;
+        margin-top: 0;
         margin-bottom: 25px;
         text-align: center;
         letter-spacing: 0.5px;
       }
 
-      /* Container that limits width on desktop but adapts nicely to small screens */
       .tos-container {
         width: 100%;
         max-width: 800px;
@@ -104,7 +124,6 @@
         gap: 20px;
       }
 
-      /* The Scrollable Text Display Box */
       .tos-textbox {
         background-color: #161b22; /* Deep dark blue-gray container */
         border: 1px solid #30363d; /* Steel blue border outline */
@@ -113,18 +132,14 @@
         font-size: 1rem;
         line-height: 1.6;
         color: #e6edf3;
-        
-        /* Enables scrolling when text gets exceptionally long */
         max-height: 500px; 
         overflow-y: auto;
-        
-        /* Preserves spacing, line breaks, and paragraphs organically */
         white-space: pre-wrap; 
         word-break: break-word;
         text-align: left;
       }
 
-      /* Custom scrollbar styling to match the dark blue theme */
+      /* Custom scrollbar styling */
       .tos-textbox::-webkit-scrollbar {
         width: 8px;
       }
@@ -140,13 +155,12 @@
         background: #5865F2;
       }
 
-      /* BUTTON ACTION ROW CONTAINER FOR HORIZONTAL ALIGNMENT */
       .button-row {
         display: flex;
         flex-direction: row;
         justify-content: center;
         align-items: center;
-        gap: 15px; /* Spaces the buttons out sideways */
+        gap: 15px;
         margin-top: 10px;
         width: 100%;
       }
@@ -155,7 +169,7 @@
         text-decoration: none;
       }
 
-      /* Base styles for ALL buttons */
+      /* Base button rules */
       button {
         background-color: #ff0000;
         color: #ffffff;
@@ -166,10 +180,8 @@
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 0 0px rgba(255, 0, 0, 0);
       }
 
-      /* Default hover settings for standard red buttons */
       button:hover {
         background-color: #ff3333;
         transform: translateY(-2px);
@@ -180,12 +192,10 @@
         transform: translateY(1px);
       }
 
-      /* TARGET ONLY THE DISCORD BUTTON INSIDE ITS SPECIFIC WRAPPER */
       .discord-btn button {
-        background-color: #5865F2; /* Discord Blurple */
+        background-color: #5865F2;
       }
 
-      /* Blue glowing effects exclusively for the Discord button hover */
       .discord-btn button:hover {
         background-color: #4752C4;
         box-shadow: 0 0 15px #5865F2, 0 0 30px #5865F2;
@@ -209,6 +219,12 @@
           }
         }
         return null;
+      }
+
+      // --- Clear Cookie and Log Out ---
+      function signOutDiscord() {
+        document.cookie = "discord_session=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        window.location.reload();
       }
 
       // --- Runtime Initializer ---
@@ -238,7 +254,10 @@
 
       <div id="nav-user-widget" class="user-profile-widget">
         <img id="nav-avatar" src="" alt="Avatar">
-        <span id="nav-username"></span>
+        <div class="user-info-text">
+          <span id="nav-username"></span>
+          <a class="signout-link" onclick="signOutDiscord()">Sign out</a>
+        </div>
       </div>
     </div>
 
