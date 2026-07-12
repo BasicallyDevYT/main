@@ -18,7 +18,7 @@
       h1 {
         font-size: 2.5rem;
         margin-bottom: 10px;
-        margin-top: 60px; /* Pushes header down slightly to clear space for the login system */
+        margin-top: 80px; /* Pushed down slightly more to make room for the profile stack */
       }
 
       p {
@@ -121,6 +121,10 @@
         top: 20px;
         right: 20px;
         z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end; /* Keeps everything cleanly aligned against the right edge */
+        gap: 8px;
       }
 
       /* Blue Standard Login Button */
@@ -165,10 +169,27 @@
         object-fit: cover;
         background-color: #444;
       }
+
+      /* Compact Sign Out Button Element underneath profile */
+      .top-signout-btn {
+        background-color: #d93025;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .top-signout-btn:hover {
+        background-color: #b3241c;
+      }
     </style>
 
     <script>
-      // --- Cookie Extraction Engine ---
+      // --- Cookie Extraction & Management Engine ---
       function getSharedCookie(name) {
         let nameEQ = name + "=";
         let ca = document.cookie.split(';');
@@ -186,18 +207,28 @@
         return null;
       }
 
+      function deleteSharedCookie(name) {
+        document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+
+      function handleWidgetSignOut() {
+        deleteSharedCookie('user_session');
+        window.location.reload();
+      }
+
       // --- Runtime Auth Visual Evaluator ---
       window.addEventListener('DOMContentLoaded', function() {
         const activeSession = getSharedCookie('user_session');
         const container = document.getElementById('auth-corner');
 
         if (activeSession) {
-          // User is logged in: Generate the layout matching your mockup structure (Name on left, Icon on right)
+          // User is logged in: Generate layout with profile label and a sign out button cleanly stacked below it
           container.innerHTML = `
             <div class="user-profile-label">
               <span class="username">${activeSession.name}</span>
               <img class="avatar-circle" src="${activeSession.avatar}" alt="User Profile Image" style="border: 2px solid ${activeSession.provider === 'discord' ? '#5865F2' : '#4caf50'};">
             </div>
+            <button class="top-signout-btn" onclick="handleWidgetSignOut()">Sign out</button>
           `;
         } else {
           // Not logged in: Build clean blue destination redirect button
