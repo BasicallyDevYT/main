@@ -5,7 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in</title>
   <link rel="icon" href="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/AccountService/WebisteIcon.jpg">
+  
+  <script>
+    // --- Global Configuration Setup ---
+    const DISCORD_CLIENT_ID = '1525897516854415450';
+    const REDIRECT_URI = 'https://basicallydevyt.github.io/main/AccountService/'; 
+
+    // --- Cookie Controls ---
+    function setSharedCookie(name, value, days) {
+      let expires = "";
+      if (days) {
+        let date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + encodeURIComponent(JSON.stringify(value)) + expires + "; path=/main/; SameSite=Lax";
+    }
+
+    function getSharedCookie(name) {
+      let nameEQ = name + "=";
+      let ca = document.cookie.split(';');
+      for(let i=0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) {
+          try {
+            return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+          } catch(e) {
+            return null;
+          }
+        }
+      }
+      return null;
+    }
+
+    function deleteSharedCookie(name) {
+      document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+
+    // --- Render UI Layout State ---
+    function displayUserProfile(user) {
+      document.getElementById('auth-buttons').style.display = 'none';
+      document.getElementById('login-header').style.display = 'none';
+      
+      const card = document.getElementById('user-card');
+      card.style.display = 'block';
+      
+      document.getElementById('user-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
+      document.getElementById('user-name').textContent = user.name;
+      document.getElementById('user-email').textContent = user.email;
+      document.getElementById('user-avatar').style.borderColor = user.provider === 'discord' ? '#5865F2' : '#4caf50';
+    }
+
+    // --- Discord Popup Method Fix ---
+    function openDiscordPopup() {
+      const url = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify%20email`;
+      const width = 500, height = 750;
+      const left = (window.screen.width / 2) - (width / 2);
+      const top = (window.screen.height / 2) - (height / 2);
+      
+      window.open(url, "DiscordAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
+    }
+
+    // --- Google Success Handler Defined Globally ---
+    window.handleCredentialResponse = function(response) {
+      const responsePayload = parseJwt(response.credential);
+      const userData = {
+        name: responsePayload.name,
+        email: responsePayload.email,
+        avatar: responsePayload.picture,
+        provider: 'google'
+      };
+
+      setSharedCookie('user_session', userData, 7);
+      displayUserProfile(userData);
+    };
+
+    function parseJwt(token) {
+      var base64Url = token.split('.')[1];
+      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    function signOut() {
+      deleteSharedCookie('user_session');
+      window.location.reload();
+    }
+
+    // --- App Initializer Engine ---
+    window.addEventListener('DOMContentLoaded', function() {
+      const activeSession = getSharedCookie('user_session');
+      if (activeSession) {
+        displayUserProfile(activeSession);
+        return;
+      }
+
+      if (window.opener && window.location.hash) {
+        const fragment = new URLSearchParams(window.location.hash.slice(1));
+        const accessToken = fragment.get('access_token');
+        if (accessToken) {
+          window.opener.postMessage({ type: 'DISCORD_AUTH_SUCCESS', token: accessToken }, window.location.origin);
+          window.close();
+        }
+      }
+    });
+
+    // Cross-window popup response listener
+    window.addEventListener('message', function(event) {
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data && event.data.type === 'DISCORD_AUTH_SUCCESS') {
+        const accessToken = event.data.token;
+        
+        fetch('https://discord.com/api/users/@me', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        })
+        .then(res => res.json())
+        .then(user => {
+          let avatarUrl = 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png';
+          if (user.avatar) {
+            avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+          }
+
+          const userData = {
+            name: user.username,
+            email: user.email || 'No verified email',
+            avatar: avatarUrl,
+            provider: 'discord'
+          };
+
+          setSharedCookie('user_session', userData, 7);
+          displayUserProfile(userData);
+        })
+        .catch(err => console.error("Discord API retrieval breakdown:", err));
+      }
+    });
+  </script>
+
+  <!-- Load Google Sign-In SDK after functions are declared -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -40,7 +182,6 @@
       align-items: center;
       margin-top: 15px;
     }
-    /* Discord Button */
     .discord-btn {
       display: flex;
       align-items: center;
@@ -137,78 +278,5 @@
   </div>
 </div>
 
-<script>
-  const DISCORD_CLIENT_ID = '1525897516854415450';
-  const REDIRECT_URI = 'https://basicallydevyt.github.io/main/AccountService/'; 
-
-  // --- Cookie Controls Isolated strictly to /main/ ---
-  function setSharedCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-      let date = new Date();
-      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-      expires = "; expires=" + date.toUTCString();
-    }
-    // Hardcoded to lock authentication profiles to the path scope of your repository folder
-    document.cookie = name + "=" + encodeURIComponent(JSON.stringify(value)) + expires + "; path=/main/; SameSite=Lax";
-  }
-
-  function getSharedCookie(name) {
-    let nameEQ = name + "=";
-    let ca = document.cookie.split(';');
-    for(let i=0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-      if (c.indexOf(nameEQ) == 0) {
-        try {
-          return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
-        } catch(e) {
-          return null;
-        }
-      }
-    }
-    return null;
-  }
-
-  function deleteSharedCookie(name) {
-    document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-  }
-
-  // --- Render Layout State UI Changes ---
-  function displayUserProfile(user) {
-    document.getElementById('auth-buttons').style.display = 'none';
-    document.getElementById('login-header').style.display = 'none';
-    
-    const card = document.getElementById('user-card');
-    card.style.display = 'block';
-    
-    document.getElementById('user-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
-    document.getElementById('user-name').textContent = user.name;
-    document.getElementById('user-email').textContent = user.email;
-    document.getElementById('user-avatar').style.borderColor = user.provider === 'discord' ? '#5865F2' : '#4caf50';
-  }
-
-  // --- Discord Fancy Window Popup Execution ---
-  function openDiscordPopup() {
-    const url = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify%20email`;
-    const width = 500, height = 750;
-    const left = (window.screen.width / 2) - (width / 2);
-    const top = (window.screen.height / 2) - (height / 2);
-    
-    // Opens centered layout configuration popup window
-    window.open(url, "DiscordAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
-  }
-
-  // --- Session Loader Watcher ---
-  window.onload = function() {
-    // 1. Is user already validated via path-locked cookies?
-    const activeSession = getSharedCookie('user_session');
-    if (activeSession) {
-      displayUserProfile(activeSession);
-      return;
-    }
-
-    // 2. Is this executing inside the POPUP window capturing access tokens?
-    if (window.opener && window.location.hash) {
-      const fragment = new URLSearchParams(window.location.hash.slice(1));
-      const accessToken
+</body>
+</html>
