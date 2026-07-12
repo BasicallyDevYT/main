@@ -21,12 +21,75 @@
         padding: 40px 20px;
         margin: 0;
         box-sizing: border-box;
+        position: relative;
+      }
+
+      /* --- Top Header Profile Layout --- */
+      .auth-header-bar {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 10;
+      }
+
+      .discord-login-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: #5865F2;
+        color: #ffffff;
+        border: none;
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        font-weight: bold;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .discord-login-nav-btn:hover {
+        background-color: #4752C4;
+        box-shadow: 0 0 15px #5865F2;
+        transform: translateY(-2px);
+      }
+
+      .discord-mini-icon {
+        width: 18px;
+        height: 18px;
+        fill: #ffffff;
+      }
+
+      .user-profile-widget {
+        display: none; /* Controlled by script */
+        align-items: center;
+        gap: 10px;
+        background: #161b22;
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid #30363d;
+      }
+
+      .user-profile-widget img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid #5865F2;
+      }
+
+      .user-profile-widget span {
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #e6edf3;
       }
 
       h1 {
         font-size: 2.5rem;
         color: #5865F2; /* Discord/Blurple Accent Blue */
-        margin-top: 0;
+        margin-top: 40px;
         margin-bottom: 25px;
         text-align: center;
         letter-spacing: 0.5px;
@@ -77,7 +140,7 @@
         background: #5865F2;
       }
 
-      /* NEW BUTTON ACTION ROW CONTAINER FOR HORIZONTAL ALIGNMENT */
+      /* BUTTON ACTION ROW CONTAINER FOR HORIZONTAL ALIGNMENT */
       .button-row {
         display: flex;
         flex-direction: row;
@@ -128,8 +191,56 @@
         box-shadow: 0 0 15px #5865F2, 0 0 30px #5865F2;
       }
     </style>
+
+    <script>
+      // --- Dedicated Discord Cookie Reader ---
+      function getDiscordCookie(name) {
+        let nameEQ = name + "=";
+        let ca = document.cookie.split(';');
+        for(let i=0; i < ca.length; i++) {
+          let c = ca[i];
+          while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+          if (c.indexOf(nameEQ) == 0) {
+            try {
+              return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+            } catch(e) {
+              return null;
+            }
+          }
+        }
+        return null;
+      }
+
+      // --- Runtime Initializer ---
+      window.addEventListener('DOMContentLoaded', function() {
+        const activeDiscordSession = getDiscordCookie('discord_session');
+        const loginBtn = document.getElementById('nav-login-btn');
+        const userWidget = document.getElementById('nav-user-widget');
+
+        if (activeDiscordSession) {
+          if (loginBtn) loginBtn.style.display = 'none';
+          if (userWidget) {
+            userWidget.style.display = 'flex';
+            document.getElementById('nav-avatar').src = activeDiscordSession.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
+            document.getElementById('nav-username').textContent = activeDiscordSession.name;
+          }
+        }
+      });
+    </script>
   </head>
   <body>
+
+    <div class="auth-header-bar">
+      <a id="nav-login-btn" href="https://basicallydevyt.github.io/main/AccountService/?return=main/TermsOfService&onlywith=discord" class="discord-login-nav-btn">
+        <svg class="discord-mini-icon" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.18,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a74.37,74.37,0,0,0,6.72-11,68.6,68.6,0,0,1-10.64-5.12c.91-.66,1.8-1.34,2.65-2a75.58,75.58,0,0,0,72.76,0c.85.69,1.74,1.37,2.65,2a68.42,68.42,0,0,1-10.64,5.12,74.74,74.74,0,0,0,6.72,11,105.73,105.73,0,0,0,31.07-18.83C129.33,49.52,123.63,26.74,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/></svg>
+        Login with Discord
+      </a>
+
+      <div id="nav-user-widget" class="user-profile-widget">
+        <img id="nav-avatar" src="" alt="Avatar">
+        <span id="nav-username"></span>
+      </div>
+    </div>
 
     <div class="tos-container">
       <h1>Terms of Service</h1>
