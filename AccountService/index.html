@@ -39,6 +39,17 @@
       return null;
     }
 
+    // --- Dynamic Navigation Redirector ---
+    function handleNavigationRedirect() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnTag = urlParams.get('return');
+      
+      if (returnTag) {
+        // Combines base link cleanly with your query string tag variable
+        window.location.href = "https://basicallydevyt.github.io/" + returnTag;
+      }
+    }
+
     function deleteSharedCookie(name) {
       document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
@@ -66,7 +77,6 @@
       
       const popup = window.open(url, "DiscordAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
       
-      // Poll the popup window every 500ms to bypass COOP postMessage blocks entirely
       const pollTimer = setInterval(function() {
         if (!popup || popup.closed) {
           clearInterval(pollTimer);
@@ -74,20 +84,17 @@
         }
         
         try {
-          // Check if the popup redirected back to our domain path
           if (popup.location.origin === window.location.origin && popup.location.hash) {
             const fragment = new URLSearchParams(popup.location.hash.slice(1));
             const accessToken = fragment.get('access_token');
             
             if (accessToken) {
               clearInterval(pollTimer);
-              popup.close(); // Forcefully shut down the tiny window immediately
+              popup.close(); 
               processDiscordToken(accessToken);
             }
           }
-        } catch (e) {
-          // Security errors are expected while the popup is still browsing on discord.com domain
-        }
+        } catch (e) { }
       }, 500);
     }
 
@@ -112,6 +119,7 @@
 
         setSharedCookie('user_session', userData, 7);
         displayUserProfile(userData);
+        handleNavigationRedirect(); // Executes auto-forward routine instantly
       })
       .catch(err => console.error("Discord profile extraction failed:", err));
     }
@@ -128,6 +136,7 @@
 
       setSharedCookie('user_session', userData, 7);
       displayUserProfile(userData);
+      handleNavigationRedirect(); // Executes auto-forward routine instantly
     };
 
     function parseJwt(token) {
