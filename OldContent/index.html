@@ -12,11 +12,13 @@
         text-align: center;
         padding: 40px 20px;
         margin: 0;
+        position: relative;
       }
 
       h1 {
         font-size: 2.5rem;
         margin-bottom: 10px;
+        margin-top: 80px; /* Pushed down to clear space for the login system */
       }
 
       p {
@@ -103,9 +105,84 @@
         font-style: italic;
         font-size: 0.95rem;
       }
+
+      /* --- TOP RIGHT CORNER AUTH HOOK LAYOUTS --- */
+      .auth-corner-widget {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+      /* Blue Standard Login Button */
+      .top-login-btn {
+        background-color: #1a73e8;
+        color: #ffffff;
+        text-decoration: none;
+        padding: 10px 20px;
+        font-weight: bold;
+        font-size: 0.95rem;
+        border-radius: 4px;
+        display: inline-block;
+        transition: background-color 0.2s, transform 0.2s;
+      }
+
+      .top-login-btn:hover {
+        background-color: #1557b0;
+        transform: translateY(-1px);
+      }
+
+      /* Profile Layout Label (Icon Right, Name Left) */
+      .user-profile-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #252525;
+        padding: 6px 14px 6px 18px;
+        border-radius: 30px;
+        border: 1px solid #333;
+      }
+
+      .user-profile-label .username {
+        font-weight: bold;
+        font-size: 0.95rem;
+        color: #ffffff;
+      }
+
+      .user-profile-label .avatar-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #444;
+      }
+
+      /* Compact Sign Out Button Element underneath profile */
+      .top-signout-btn {
+        background-color: #d93025;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .top-signout-btn:hover {
+        background-color: #b3241c;
+      }
     </style>
   </head>
   <body>
+
+    <div id="auth-corner" class="auth-corner-widget"></div>
+
     <h1>Old content</h1>
     <p>
       This is where i store my Old files!
@@ -119,7 +196,55 @@
       <div id="directory-content">Loading files...</div>
     </div>
 
-<script>
+    <script>
+      // --- Cookie Extraction & Management Engine ---
+      function getSharedCookie(name) {
+        let nameEQ = name + "=";
+        let ca = document.cookie.split(';');
+        for(let i=0; i < ca.length; i++) {
+          let c = ca[i];
+          while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+          if (c.indexOf(nameEQ) == 0) {
+            try {
+              return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+            } catch(e) {
+              return null;
+            }
+          }
+        }
+        return null;
+      }
+
+      function deleteSharedCookie(name) {
+        document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+
+      function handleWidgetSignOut() {
+        deleteSharedCookie('user_session');
+        window.location.reload();
+      }
+
+      // --- Runtime Auth Visual Evaluator ---
+      function renderAuthWidget() {
+        const activeSession = getSharedCookie('user_session');
+        const container = document.getElementById('auth-corner');
+
+        if (activeSession) {
+          container.innerHTML = `
+            <div class="user-profile-label">
+              <span class="username">${activeSession.name}</span>
+              <img class="avatar-circle" src="${activeSession.avatar}" alt="User Profile Image" style="border: 2px solid ${activeSession.provider === 'discord' ? '#5865F2' : '#4caf50'};">
+            </div>
+            <button class="top-signout-btn" onclick="handleWidgetSignOut()">Sign out</button>
+          `;
+        } else {
+          container.innerHTML = `
+            <a href="https://basicallydevyt.github.io/main/AccountService/?return=OldContent" class="top-login-btn">Sign in</a>
+          `;
+        }
+      }
+
+      // --- GitHub Content Directory Methods ---
       const USERNAME = 'basicallydevyt';
       const REPO = 'main';
       const FOLDER_PATH = 'OldContent'; 
@@ -133,7 +258,6 @@
         const cachedData = localStorage.getItem(CACHE_KEY);
         const cachedEtag = localStorage.getItem(ETAG_KEY);
 
-        // Set up headers to ask GitHub if the folder actually changed
         const headers = {};
         if (cachedData && cachedEtag) {
           headers['If-None-Match'] = cachedEtag;
@@ -142,7 +266,6 @@
         try {
           const response = await fetch(url, { headers });
 
-          // 304 means NOT MODIFIED. Safe to use cache, zero rate-limit penalty!
           if (response.status === 304 && cachedData) {
             console.log("No changes detected on GitHub. Loading from cache.");
             processAndRenderFiles(JSON.parse(cachedData));
@@ -163,7 +286,6 @@
           const files = await response.json();
           const newEtag = response.headers.get('ETag');
 
-          // Save the fresh files and the new version fingerprint
           localStorage.setItem(CACHE_KEY, JSON.stringify(files));
           if (newEtag) {
             localStorage.setItem(ETAG_KEY, newEtag);
@@ -236,7 +358,11 @@
         return sectionHtml;
       }
 
-      fetchFiles();
+      // Initializer runs on boot
+      window.addEventListener('DOMContentLoaded', function() {
+        renderAuthWidget();
+        fetchFiles();
+      });
     </script>
   </body>
 </html>
