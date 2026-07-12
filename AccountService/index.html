@@ -11,14 +11,14 @@
     const DISCORD_CLIENT_ID = '1525897516854415450';
     const REDIRECT_URI = 'https://basicallydevyt.github.io/main/AccountService/'; 
 
-    // --- Dynamic Cookie Key Decoupler ---
+    // --- Determine cookie name dynamically ---
     function getSessionCookieName() {
       const urlParams = new URLSearchParams(window.location.search);
       const onlyWith = urlParams.get('onlywith')?.toLowerCase();
       
       if (onlyWith === 'google') return 'google_session';
       if (onlyWith === 'discord') return 'discord_session';
-      return 'user_session'; // Default global cookie
+      return 'user_session'; 
     }
 
     // --- Cookie Controls ---
@@ -49,6 +49,10 @@
       return null;
     }
 
+    function deleteSharedCookie(name) {
+      document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+
     // --- Dynamic Navigation Redirector ---
     function handleNavigationRedirect() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -57,10 +61,6 @@
       if (returnTag) {
         window.location.href = "https://basicallydevyt.github.io/" + returnTag;
       }
-    }
-
-    function deleteSharedCookie(name) {
-      document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
 
     // --- Render UI Layout State ---
@@ -171,14 +171,14 @@
       const googleWrapper = document.getElementById('google-btn-wrapper');
       const discordBtn = document.getElementById('discord-auth-btn');
 
-      // Visibility toggles based strictly on valid options
+      // 1. Visually filter buttons using display styles
       if (onlyWith === 'google') {
         if (discordBtn) discordBtn.style.display = 'none';
       } else if (onlyWith === 'discord') {
         if (googleWrapper) googleWrapper.style.display = 'none';
       }
 
-      // Check the correct cookie state depending on where they came from
+      // 2. Read the accurate session cookie for the requested scope
       const activeSession = getSharedCookie(getSessionCookieName());
       if (activeSession) {
         displayUserProfile(activeSession);
