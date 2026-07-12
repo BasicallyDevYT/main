@@ -40,7 +40,7 @@
       align-items: center;
       margin-top: 15px;
     }
-    /* Discord Button Layout Fixes */
+    /* Discord Button Layout */
     .discord-btn {
       display: flex;
       align-items: center;
@@ -67,13 +67,33 @@
       fill: white;
       flex-shrink: 0;
     }
-    #user-info {
+    #user-card {
       margin-top: 20px;
-      padding: 10px;
+      padding: 16px;
       background: #2a2a2a;
-      border-radius: 4px;
+      border-radius: 8px;
       display: none;
-      font-size: 14px;
+      text-align: center;
+    }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin-bottom: 10px;
+      border: 2px solid #4285f4;
+    }
+    .signout-btn {
+      margin-top: 15px;
+      padding: 8px 16px;
+      background-color: #d93025;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .signout-btn:hover {
+      background-color: #b3241c;
     }
   </style>
 </head>
@@ -81,17 +101,9 @@
 
 <div class="login-box">
   <img class="logo" src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/AccountService/WebisteIcon.jpg" alt="Logo">
-  <h2>Sign in</h2>
+  <h2 id="login-header">Sign in</h2>
 
-  <div id="g_id_onload"
-       data-client_id="196116314911-l60piim5ck5utaabr33cr2o33q5l4ufp.apps.googleusercontent.com"
-       data-context="signin"
-       data-ux_mode="popup"
-       data-callback="handleCredentialResponse"
-       data-auto_prompt="false">
-  </div>
-
-  <div class="button-container">
+  <div id="auth-buttons" class="button-container">
     <div class="g_id_signin"
          data-type="standard"
          data-shape="rectangular"
@@ -107,22 +119,91 @@
     </a>
   </div>
 
-  <div id="user-info"></div>
+  <div id="g_id_onload"
+       data-client_id="196116314911-l60piim5ck5utaabr33cr2o33q5l4ufp.apps.googleusercontent.com"
+       data-context="signin"
+       data-ux_mode="popup"
+       data-callback="handleCredentialResponse"
+       data-auto_prompt="false">
+  </div>
+
+  <div id="user-card">
+    <img id="user-avatar" class="avatar" src="" alt="Avatar">
+    <h3 id="user-name" style="margin: 5px 0; color: #fff;"></h3>
+    <p id="user-email" style="margin: 2px 0; color: #aaa; font-size: 13px;"></p>
+    <button class="signout-btn" onclick="signOut()">Sign out</button>
+  </div>
 </div>
 
 <script>
-  // --- Discord Configuration ---
+  // --- Global Setup Configuration ---
   const DISCORD_CLIENT_ID = '1525897516854415450';
-  
-  // Explicitly hardcode your GitHub Pages folder URL right here:
   const REDIRECT_URI = 'https://basicallydevyt.github.io/main/AccountService/'; 
-  
-  // Build the URL
+
   document.getElementById('discord-login-link').href = 
     `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify%20email`;
 
-  // --- Handle Returning Discord Users ---
+  // --- Cookie Helper Utilities ---
+  function setSharedCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+      let date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      expires = "; expires=" + date.toUTCString();
+    }
+    // Automatically shares session profile data with all of your standard *.github.io sites
+    let domainSetting = window.location.hostname.endsWith('github.io') ? "; domain=.github.io" : "";
+    document.cookie = name + "=" + encodeURIComponent(JSON.stringify(value)) + expires + "; path=/" + domainSetting + "; SameSite=Lax";
+  }
+
+  function getSharedCookie(name) {
+    let nameEQ = name + "=";
+    let ca = document.cookie.split(';');
+    for(let i=0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) {
+        try {
+          return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+        } catch(e) {
+          return null;
+        }
+      }
+    }
+    return null;
+  }
+
+  function deleteSharedCookie(name) {
+    let domainSetting = window.location.hostname.endsWith('github.io') ? "; domain=.github.io" : "";
+    document.cookie = name + "=; path=/;" + domainSetting + "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  }
+
+  // --- Render Profile Layout UI State ---
+  function displayUserProfile(user) {
+    document.getElementById('auth-buttons').style.display = 'none';
+    document.getElementById('login-header').style.display = 'none';
+    
+    const card = document.getElementById('user-card');
+    card.style.display = 'block';
+    
+    document.getElementById('user-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
+    document.getElementById('user-name').textContent = user.name;
+    document.getElementById('user-email').textContent = user.email;
+    
+    // Change profile ring border color depending on who logged in
+    document.getElementById('user-avatar').style.borderColor = user.provider === 'discord' ? '#5865F2' : '#4caf50';
+  }
+
+  // --- Handle Returning Sessions ---
   window.onload = function() {
+    // 1. Check if we just logged in via a cookie session storage backup
+    const activeSession = getSharedCookie('user_session');
+    if (activeSession) {
+      displayUserProfile(activeSession);
+      return;
+    }
+
+    // 2. Parse Discord token authentication callbacks out of the URL bar
     const fragment = new URLSearchParams(window.location.hash.slice(1));
     const accessToken = fragment.get('access_token');
 
@@ -134,28 +215,39 @@
       })
       .then(res => res.json())
       .then(user => {
-        const infoBox = document.getElementById("user-info");
-        infoBox.style.display = "block";
-        infoBox.innerHTML = `
-          <p style="color: #5865F2; margin: 0 0 5px 0;"><strong>Discord Login Successful!</strong></p>
-          <p style="margin: 2px 0;">Username: ${user.username}</p>
-          <p style="margin: 2px 0;">Email: ${user.email || 'No email verified'}</p>
-        `;
+        // Construct user dynamic avatar image link using Discord CDN strings
+        let avatarUrl = 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png';
+        if (user.avatar) {
+          avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+        }
+
+        const userData = {
+          name: user.username,
+          email: user.email || 'No verified email',
+          avatar: avatarUrl,
+          provider: 'discord'
+        };
+
+        setSharedCookie('user_session', userData, 7); // Cache session securely for 7 days
+        displayUserProfile(userData);
       })
-      .catch(err => console.error("Discord load failed:", err));
+      .catch(err => console.error("Discord parse crash profile layer:", err));
     }
   };
 
-  // --- Google Success Handler ---
+  // --- Google Authentication Handler ---
   function handleCredentialResponse(response) {
     const responsePayload = parseJwt(response.credential);
-    const infoBox = document.getElementById("user-info");
-    infoBox.style.display = "block";
-    infoBox.innerHTML = `
-      <p style="color: #4caf50; margin: 0 0 5px 0;"><strong>Google Login Successful!</strong></p>
-      <p style="margin: 2px 0;">Name: ${responsePayload.name}</p>
-      <p style="margin: 2px 0;">Email: ${responsePayload.email}</p>
-    `;
+    
+    const userData = {
+      name: responsePayload.name,
+      email: responsePayload.email,
+      avatar: responsePayload.picture,
+      provider: 'google'
+    };
+
+    setSharedCookie('user_session', userData, 7);
+    displayUserProfile(userData);
   }
 
   function parseJwt(token) {
@@ -165,6 +257,13 @@
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
     return JSON.parse(jsonPayload);
+  }
+
+  // --- Clear State Action Trigger ---
+  function signOut() {
+    deleteSharedCookie('user_session');
+    // Reload immediately back to login screen options cleanly
+    window.location.reload();
   }
 </script>
 
