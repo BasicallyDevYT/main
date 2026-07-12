@@ -3,124 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in - Google Accounts</title>
-  <link rel="icon" href="https://ssl.gstatic.com/accounts/ui/favicon.ico">
+  <title>Sign in</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/AccountService/WebisteIcon.jpg">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
+      background-color: #121212;
+      color: #e3e3e3;
       text-align: center;
       padding-top: 50px;
     }
     .login-box {
-      background: white;
-      padding: 20px;
+      background: #1e1e1e;
+      padding: 24px;
       border-radius: 8px;
       display: inline-block;
-      box-shadow: 0px 0px 10px 0px gray;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
       width: 320px;
-      text-align: left;
-    }
-    input[type="text"], input[type="password"] {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-    input[type="submit"] {
-      width: 100%;
-      padding: 10px;
-      background-color: #4285f4;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    input[type="submit"]:hover {
-      background-color: #357ae8;
+      text-align: center;
     }
     img {
       width: 75px;
-      margin-bottom: 20px;
+      display: block;
+      margin: 0 auto 10px auto;
     }
     h2 {
       font-size: 24px;
-      margin-bottom: 20px;
-      color: #333;
+      margin: 0 0 20px 0;
+      color: #fff;
     }
-    .footer {
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 15px;
+    }
+    #user-info {
       margin-top: 20px;
+      padding: 10px;
+      background: #2a2a2a;
+      border-radius: 4px;
+      display: none;
       font-size: 14px;
-      color: #555;
-    }
-    .footer a {
-      text-decoration: none;
-      color: #4285f4;
-    }
-    .footer a:hover {
-      text-decoration: underline;
-    }
-    /* Style for validation message */
-    .error-message {
-      color: red;
-      font-size: 12px;
-      margin-top: -10px;
     }
   </style>
 </head>
 <body>
 
 <div class="login-box">
-  <img src="https://static.wikia.nocookie.net/googlefanonpedia/images/9/9c/Festisite_google_%286%29.png/revision/latest?cb=20170223193600"  alt="Boogle Logo">
+  <img src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/AccountService/WebisteIcon.jpg" alt="Logo">
   <h2>Sign in</h2>
-  <form id="login-form" method="POST">
-    <input type="text" id="identifier" name="identifier" placeholder="Email or phone" required><br>
-    <div id="email-error" class="error-message"></div>
 
-    <input type="password" id="password" name="password" placeholder="Enter your password" required><br>
-    <div id="password-error" class="error-message"></div>
-
-    <input type="submit" value="Next">
-  </form>
-  <div class="footer">
-    <p><a href="" target="_blank">Create account</a></p>
+  <div id="g_id_onload"
+       data-client_id="196116314911-l60piim5ck5utaabr33cr2o33q5l4ufp.apps.googleusercontent.com"
+       data-context="signin"
+       data-ux_mode="popup"
+       data-callback="handleCredentialResponse"
+       data-auto_prompt="false">
   </div>
+
+  <div class="button-container">
+    <div class="g_id_signin"
+         data-type="standard"
+         data-shape="rectangular"
+         data-theme="filled_blue"
+         data-text="signin_with"
+         data-size="large"
+         data-logo_alignment="left">
+    </div>
+  </div>
+
+  <div id="user-info"></div>
 </div>
 
 <script>
-  // Handle form submission with validation for specific email/password combinations
-  document.getElementById('login-form').addEventListener('submit', function(e) {
-    e.preventDefault(); // Prevent default form submission
+  // This function executes automatically when a user logs in successfully
+  function handleCredentialResponse(response) {
+    const responsePayload = parseJwt(response.credential);
 
-    var email = document.getElementById('identifier').value;
-    var password = document.getElementById('password').value;
+    // Display a welcome message using the verified data returned from Google
+    const infoBox = document.getElementById("user-info");
+    infoBox.style.display = "block";
+    infoBox.innerHTML = `
+      <p style="color: #4caf50; margin: 0 0 5px 0;"><strong>Login Successful!</strong></p>
+      <p style="margin: 2px 0;">Name: ${responsePayload.name}</p>
+      <p style="margin: 2px 0;">Email: ${responsePayload.email}</p>
+    `;
+  }
 
-    var emailError = document.getElementById('email-error');
-    var passwordError = document.getElementById('password-error');
+  // Helper function to safely read the login token details on the frontend
+  function parseJwt(token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
 
-    // Clear previous error messages
-    emailError.textContent = '';
-    passwordError.textContent = '';
-
-    // Check if email and password are empty
-    if (!email) {
-      emailError.textContent = 'Please fill out this field';
-    }
-    if (!password) {
-      passwordError.textContent = 'Please fill out this field';
-    }
-
-    // Validate email and password pairs
-
-  // Handle the Enter key event to submit the form
-  document.querySelector('input[type="password"]').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      document.getElementById('login-form').submit();
-    }
-  });
+    return JSON.parse(jsonPayload);
+  }
 </script>
 
 </body>
