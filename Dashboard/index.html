@@ -182,11 +182,8 @@
       if (!user) {
         document.getElementById('logged-in-view').style.display = 'none';
         document.getElementById('logged-out-view').style.display = 'block';
+        document.getElementById('login-link').href = "https://basicallydevyt.github.io/main/AccountService/?return=main/Dashboard";
         return;
-      }
-
-      function handleLogIn() {
-        window.location.href = "https://basicallydevyt.github.io/main/AccountService/?return=main/Dashboard";
       }
 
       // Ensure the logged-in setup is visible
@@ -317,7 +314,7 @@
 
     <div id="logged-out-view" style="display: none; width: 100%; text-align: center;">
       <h2 class="user-name" style="margin-bottom: 20px;">Access Dashboard</h2>
-      <button onclick="handleLogIn()" class="btn btn-login">Log in</button>
+      <a id="login-link" href="#" class="btn btn-login">Log In</a>
     </div>
 
   </div>
