@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GD Dashboard</title>
+  <title>Dashboard</title>
   <style>
-    /* GD Styling & Background Colors */
+    /* Sleek, Jet-Black Modern Aesthetic */
     body {
-      font-family: Arial, sans-serif;
-      background-color: #1a0f0a; 
-      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #09090b; /* Pure dark zinc/black background */
+      color: #fafafa;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
@@ -19,150 +18,74 @@
       box-sizing: border-box;
     }
 
-    /* Main GD Account Plate */
-    .gd-panel {
-      background-color: #bf6f3a; /* Iconic brown panel background */
-      border: 5px solid #000000;
+    /* Minimalist Profile Card */
+    .profile-card {
+      background-color: #121214; /* Deep charcoal black card */
+      border: 1px solid #27272a; /* Soft dark border */
       border-radius: 16px;
-      padding: 20px;
-      width: 600px;
-      max-width: 90%;
-      box-shadow: inset 0 0 15px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.6);
+      padding: 32px;
+      width: 320px;
       display: flex;
       flex-direction: column;
-      gap: 15px;
-      position: relative;
-    }
-
-    /* Top Row: User Name & Badges */
-    .gd-header {
-      display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 12px;
-      position: relative;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     }
 
-    .username-title {
-      font-size: 2.5rem;
-      font-weight: bold;
+    /* Profile Avatar Container */
+    .avatar-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .user-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 2px solid #27272a;
+      object-fit: cover;
+      background-color: #1c1c1e;
+    }
+
+    /* Absolute Center/Corner Layout for Badge (Uncropped) */
+    .role-badge {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 32px;
+      height: 32px;
+      display: none; /* Shown dynamically via JS */
+      object-fit: contain; /* Prevents any cropping of the badge icon */
+      background: #121214;
+      border-radius: 50%;
+      border: 2px solid #27272a;
+      padding: 2px;
+    }
+
+    /* Username & Role Text styling */
+    .user-name {
+      font-size: 1.5rem;
+      font-weight: 700;
       color: #ffffff;
-      text-transform: uppercase;
-      text-shadow: 
-        -3px -3px 0 #000,  
-         3px -3px 0 #000,
-        -3px  3px 0 #000,
-         3px  3px 0 #000;
-      letter-spacing: 2px;
       margin: 0;
+      letter-spacing: -0.5px;
+      text-align: center;
     }
 
-    /* GD Badge: Aligned like the mod icon in GD */
-    .gd-badge {
-      width: 38px;
-      height: 38px;
-      display: none; /* Injected by JS */
-      object-fit: contain; /* Prevents any cropping */
-    }
-
-    /* Stats Grid Bar */
-    .gd-stats-bar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      text-shadow: 2px 2px 0px #000000;
-    }
-
-    .stat-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* Placeholder Icons Row Container */
-    .gd-icons-container {
-      background-color: #a15525;
-      border: 3px solid #603010;
-      border-radius: 12px;
-      padding: 10px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .gd-icon-box {
-      width: 45px;
-      height: 45px;
-      background-color: #123015; /* Green GD default template color */
-      border: 2px solid #000000;
-      border-radius: 6px;
-    }
-
-    /* Custom Message Box Container */
-    .gd-message-box {
-      background-color: #834015;
-      border: 3px solid #5a2a0a;
-      border-radius: 12px;
-      padding: 15px;
-      text-align: left;
-      min-height: 80px;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-    }
-
-    .message-title {
-      font-weight: bold;
-      color: #ffc83b;
-      font-size: 1.1rem;
-      text-shadow: 1.5px 1.5px 0px #000000;
-      margin-bottom: 5px;
-    }
-
-    .message-body {
-      color: #ffffff;
-      font-size: 0.95rem;
-      line-height: 1.4;
-      text-shadow: 1px 1px 0px #000000;
-    }
-
-    /* GD-Styled Signout Button (Styled like red navigation actions) */
-    .signout-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 5px;
-    }
-
-    .gd-btn-red {
-      background-color: #da373c;
-      color: #ffffff;
-      border: 3px solid #000000;
-      border-radius: 8px;
-      padding: 10px 24px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 0px #000000;
-      transition: transform 0.1s, background-color 0.2s;
-    }
-
-    .gd-btn-red:hover {
-      background-color: #bc2f34;
-    }
-
-    .gd-btn-red:active {
-      transform: translateY(3px);
-      box-shadow: 0 1px 0px #000000;
+    .role-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #a1a1aa; /* Muted gray text */
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0;
     }
   </style>
 
   <script>
-    // --- Global Path Configurations ---
     const ICON_BASE = "https://basicallydevyt.github.io/main/WebsiteIcons/";
     const ROLES_JSON_URL = "https://basicallydevyt.github.io/main/AccountService/roles.json";
 
-    // --- Cookie State Reader ---
     function getSessionCookie() {
       let ca = document.cookie.split(';');
       for(let i=0; i < ca.length; i++) {
@@ -177,117 +100,83 @@
       return null;
     }
 
-    function signOut() {
-      document.cookie = "discord_session=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = "user_session=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      window.location.href = "https://basicallydevyt.github.io/main/AccountService/";
-    }
-
-    // --- Dynamic Profile Engine ---
     window.addEventListener('DOMContentLoaded', async function() {
       const user = getSessionCookie();
       
-      // Kick out users without an active session
       if (!user) {
         window.location.href = "https://basicallydevyt.github.io/main/AccountService/";
         return;
       }
 
-      // Populate basic details right away
+      // Set baseline username and avatar
       document.getElementById('username').textContent = user.name;
+      document.getElementById('display-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
 
       const badgeImg = document.getElementById('display-badge');
-      const msgTitle = document.getElementById('msg-title');
-      const msgBody = document.getElementById('msg-body');
+      const roleTxt = document.getElementById('role-display');
 
       try {
         const response = await fetch(ROLES_JSON_URL);
-        if (!response.ok) throw new Error("Could not load privileges file");
+        if (!response.ok) throw new Error("Could not load privileges");
         const roles = await response.json();
 
         const usernameLower = user.name.toLowerCase();
 
-        // Check Creator Level
         if (roles.creator && roles.creator.map(u => u.toLowerCase()).includes(usernameLower)) {
           badgeImg.src = ICON_BASE + "Creator.png";
           badgeImg.style.display = "block";
-          msgTitle.textContent = user.name;
-          msgBody.textContent = "Welcome back, Boss! Everything is verified, clean, and running smoothly.";
+          roleTxt.textContent = "Creator";
+          roleTxt.style.color = "#ff4500";
         } 
-        // Check Moderator Structure
         else if (roles.moderators && roles.moderators[user.name]) {
           const modType = roles.moderators[user.name].toLowerCase();
           
           if (modType === "elder") {
             badgeImg.src = ICON_BASE + "ElderModerator.webp";
-            msgBody.textContent = "You are currently logged in with Elder Moderator administrative access.";
+            roleTxt.textContent = "Elder Moderator";
+            roleTxt.style.color = "#ff2d55";
           } else if (modType === "trusted") {
             badgeImg.src = ICON_BASE + "LeaderboardModerator.webp";
-            msgBody.textContent = "You are currently logged in with Trusted Moderator administrative access.";
+            roleTxt.textContent = "Trusted Moderator";
+            roleTxt.style.color = "#af52de";
           } else {
             badgeImg.src = ICON_BASE + "Moderator.webp";
-            msgBody.textContent = "You are currently logged in with Moderator administrative access.";
+            roleTxt.textContent = "Moderator";
+            roleTxt.style.color = "#34c759";
           }
           badgeImg.style.display = "block";
-          msgTitle.textContent = user.name;
         } 
-        // Check Featured Lists
         else if (roles.featured && roles.featured.map(u => u.toLowerCase()).includes(usernameLower)) {
           badgeImg.src = ICON_BASE + "Featured.png";
           badgeImg.style.display = "block";
-          msgTitle.textContent = user.name;
-          msgBody.textContent = "Welcome! You are on our featured list. Thank you for your continued support!";
+          roleTxt.textContent = "Featured User";
+          roleTxt.style.color = "#ffcc00";
         } 
-        // Default Base User Tier
         else {
-          msgTitle.textContent = user.name;
-          msgBody.textContent = "Welcome to your GD dashboard profile! Check out your custom configuration panels.";
+          roleTxt.textContent = "Member";
+          roleTxt.style.color = "#a1a1aa";
         }
 
       } catch (err) {
-        console.error("Privilege lookup failed, applying safe fallbacks:", err);
-        badgeImg.src = ICON_BASE + "Error.png"; // Safely loads error badge without cropping
+        console.error("Privilege lookup failed:", err);
+        badgeImg.src = ICON_BASE + "Error.png"; // Safely display unmodified, uncropped error icon
         badgeImg.style.display = "block";
-        msgTitle.textContent = "ERROR DETECTED";
-        msgBody.textContent = "Failed to synchronize status with server. Roles are unavailable right now.";
+        roleTxt.textContent = "Error Loading Roles";
+        roleTxt.style.color = "#ff453a";
       }
     });
   </script>
 </head>
 <body>
 
-  <div class="gd-panel">
+  <div class="profile-card">
+    <div class="avatar-wrapper">
+      <img id="display-avatar" class="user-avatar" src="" alt="Avatar">
+      <img id="display-badge" class="role-badge" src="" alt="Badge">
+    </div>
     
-    <div class="gd-header">
-      <img id="display-badge" class="gd-badge" src="" alt="Badge">
-      <h2 id="username" class="username-title">LOADING...</h2>
-    </div>
-
-    <div class="gd-stats-bar">
-      <div class="stat-item"><span style="color: #ffeb3b;">★</span> 14,926</div>
-      <div class="stat-item"><span style="color: #4fc3f7;">☾</span> 97</div>
-      <div class="stat-item"><span style="color: #ffd54f;">✪</span> 162</div>
-      <div class="stat-item"><span style="color: #e0e0e0;">⬤</span> 1,696</div>
-      <div class="stat-item"><span style="color: #ff5252;">👹</span> 27</div>
-    </div>
-
-    <div class="gd-icons-container">
-      <div class="gd-icon-box" style="background-color: #2e7d32;"></div>
-      <div class="gd-icon-box" style="background-color: #2e7d32;"></div>
-      <div class="gd-icon-box" style="background-color: #2e7d32;"></div>
-      <div class="gd-icon-box" style="background-color: #2e7d32;"></div>
-      <div class="gd-icon-box" style="background-color: #2e7d32;"></div>
-    </div>
-
-    <div class="gd-message-box">
-      <div id="msg-title" class="message-title">Connecting...</div>
-      <div id="msg-body" class="message-body">Waiting for active session handshake...</div>
-    </div>
-
-    <div class="signout-container">
-      <button class="gd-btn-red" onclick="signOut()">Sign out</button>
-    </div>
-
+    <h2 id="username" class="user-name">Loading...</h2>
+    <div id="role-display" class="role-label">Connecting...</div>
   </div>
 
 </body>
