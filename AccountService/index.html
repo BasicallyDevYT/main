@@ -168,7 +168,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       const onlyWith = urlParams.get('onlywith')?.toLowerCase();
 
-      const signOut = urlParams.get('signout')?.toLowerCase();
+      const signOut = urlParams.get('signout');
       
       const googleWrapper = document.getElementById('google-btn-wrapper');
       const discordBtn = document.getElementById('discord-auth-btn');
