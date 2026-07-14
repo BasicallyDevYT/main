@@ -156,9 +156,23 @@
       return null;
     }
 
+    function getSessionCookieName() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const onlyWith = urlParams.get('onlywith')?.toLowerCase();
+      
+      if (onlyWith === 'google') return 'google_session';
+      if (onlyWith === 'discord') return 'discord_session';
+      return 'user_session'; 
+    }
+
+    function deleteSharedCookie(name) {
+      document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+
     // Erases the cookie safely by setting it to expire immediately
     function handleSignOut() {
-      window.location.href = AUTH_REDIRECT_URL;
+      deleteSharedCookie(getSessionCookieName());
+      window.location.reload();
     }
 
     function handleSignOut() {
