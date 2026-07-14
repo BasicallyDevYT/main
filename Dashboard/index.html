@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 50px;
+      margin: 0;
+    }
+
+    .dashboard-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      width: 350px;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* --- Badge / Icon Layer Layout --- */
+    .avatar-badge-container {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+
+    .user-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 3px solid #5865F2;
+      display: block;
+    }
+
+    /* Absolute positioning layout matching your tag concept */
+    .role-badge {
+      position: absolute;
+      bottom: -5px;
+      right: -5px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #161b22;
+      background-color: #21262d;
+      display: none; /* Shown dynamically via JS */
+      object-fit: cover;
+    }
+
+    h2 {
+      margin: 10px 0 5px 0;
+      color: #fff;
+    }
+
+    .role-text {
+      font-size: 0.9rem;
+      color: #5865F2;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .signout-btn {
+      background-color: #da373c;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .signout-btn:hover {
+      background-color: #bc2f34;
+    }
+  </style>
+
+  <script>
+    // --- Global Path Configurations ---
+    const ICON_BASE = "https://basicallydevyt.github.io/main/WebsiteIcons/";
+    const ROLES_JSON_URL = "https://basicallydevyt.github.io/main/AccountService/roles.json";
+
+    // --- Cookie State Reader ---
+    function getSessionCookie() {
+      let ca = document.cookie.split(';');
+      for(let i=0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        // Check for either possible cookie scope
+        if (c.indexOf("discord_session=") == 0) {
+          return JSON.parse(decodeURIComponent(c.substring("discord_session=".length)));
+        }
+        if (c.indexOf("user_session=") == 0) {
+          return JSON.parse(decodeURIComponent(c.substring("user_session=".length)));
+        }
+      }
+      return null;
+    }
+
+    function signOut() {
+      // Clear sessions across paths
+      document.cookie = "discord_session=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "user_session=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      window.location.href = "https://basicallydevyt.github.io/main/AccountService/";
+    }
+
+    // --- Dynamic Profile Engine ---
+    window.addEventListener('DOMContentLoaded', async function() {
+      const user = getSessionCookie();
+      
+      // Gatekeeper: Kick out users without an active session
+      if (!user) {
+        window.location.href = "https://basicallydevyt.github.io/main/AccountService/";
+        return;
+      }
+
+      // Populate basic details right away
+      document.getElementById('username').textContent = user.name;
+      document.getElementById('display-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
+
+      const badgeImg = document.getElementById('display-badge');
+      const roleTxt = document.getElementById('role-display');
+
+      try {
+        // Fetch securely managed repository data
+        const response = await fetch(ROLES_JSON_URL);
+        if (!response.ok) throw new Error("Could not load privileges file");
+        const roles = await response.json();
+
+        const usernameLower = user.name.toLowerCase();
+
+        // Check Creator Level
+        if (roles.creator && roles.creator.map(u => u.toLowerCase()).includes(usernameLower)) {
+          badgeImg.src = ICON_BASE + "Creator.png";
+          badgeImg.style.display = "block";
+          roleTxt.textContent = "Creator";
+          roleTxt.style.color = "#ff4500";
+        } 
+        // Check Moderator Structure
+        else if (roles.moderators && roles.moderators[user.name]) {
+          const modType = roles.moderators[user.name].toLowerCase();
+          
+          if (modType === "elder") {
+            badgeImg.src = ICON_BASE + "ElderModerator.webp";
+            roleTxt.textContent = "Elder Moderator";
+            roleTxt.style.color = "#e91e63";
+          } else if (modType === "trusted") {
+            badgeImg.src = ICON_BASE + "LeaderboardModerator.webp";
+            roleTxt.textContent = "Trusted Moderator";
+            roleTxt.style.color = "#9c27b0";
+          } else {
+            badgeImg.src = ICON_BASE + "Moderator.webp";
+            roleTxt.textContent = "Moderator";
+            roleTxt.style.color = "#4caf50";
+          }
+          badgeImg.style.display = "block";
+        } 
+        // Check Featured Lists
+        else if (roles.featured && roles.featured.map(u => u.toLowerCase()).includes(usernameLower)) {
+          badgeImg.src = ICON_BASE + "Featured.png";
+          badgeImg.style.display = "block";
+          roleTxt.textContent = "Featured User";
+          roleTxt.style.color = "#ffeb3b";
+        } 
+        // Default Base User Tier
+        else {
+          roleTxt.textContent = "Community Member";
+          roleTxt.style.color = "#8b949e";
+        }
+
+      } catch (err) {
+        console.error("Privilege lookup failed, applying safe fallbacks:", err);
+        badgeImg.src = ICON_BASE + "Error.png";
+        badgeImg.style.display = "block";
+        roleTxt.textContent = "Error Loading Roles";
+        roleTxt.style.color = "#ff3333";
+      }
+    });
+  </script>
+</head>
+<body>
+
+  <div class="dashboard-card">
+    <div class="avatar-badge-container">
+      <img id="display-avatar" class="user-avatar" src="" alt="User Avatar">
+      <img id="display-badge" class="role-badge" src="" alt="Role Badge">
+    </div>
+    
+    <h2 id="username">Loading...</h2>
+    <div id="role-display" class="role-text">Connecting...</div>
+    
+    <button class="signout-btn" onclick="signOut()">Sign out</button>
+  </div>
+
+</body>
+</html>
