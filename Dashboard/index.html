@@ -47,15 +47,15 @@
       background-color: #1c1c1e;
     }
 
-    /* Badge Overlay Layout */
+    /* Absolute Center/Corner Layout for Badge (Uncropped) */
     .role-badge {
       position: absolute;
       bottom: 0;
       right: 0;
       width: 32px;
       height: 32px;
-      display: none; /* Shown dynamically via JS */
-      object-fit: contain; /* Prevents cropping */
+      display: none;
+      object-fit: contain;
       background: #121214;
       border-radius: 50%;
       border: 2px solid #27272a;
@@ -84,15 +84,14 @@
 
   <script>
     const ICON_BASE = "https://basicallydevyt.github.io/main/WebsiteIcons/";
-    const ROLES_JSON_URL = "https://basicallydevyt.github.io/main/Dashboard/roles.json";
+    const ROLES_JSON_URL = "roles.json";
+    const AUTH_REDIRECT_URL = "https://basicallydevyt.github.io/main/AccountService/?return=main/Dashboard";
 
-    function getSessionCookie() {
+    // ONLY reads the global user_session cookie
+    function getGlobalSessionCookie() {
       let ca = document.cookie.split(';');
       for(let i=0; i < ca.length; i++) {
         let c = ca[i].trim();
-        if (c.indexOf("discord_session=") == 0) {
-          return JSON.parse(decodeURIComponent(c.substring("discord_session=".length)));
-        }
         if (c.indexOf("user_session=") == 0) {
           return JSON.parse(decodeURIComponent(c.substring("user_session=".length)));
         }
@@ -100,53 +99,58 @@
       return null;
     }
 
-    // Helper to resolve the user's ID regardless of platform state
-    function getUserId(user) {
-      if (user.id) return String(user.id);
-      
-      // Fallback: extract Discord ID from avatar URL if user.id is not stored directly
-      if (user.provider === "discord" && user.avatar) {
-        const match = user.avatar.match(/\/avatars\/(\d+)\//);
-        if (match) return match[1];
-      }
-      
-      return null;
-    }
-
     window.addEventListener('DOMContentLoaded', async function() {
-      const user = getSessionCookie();
+      const user = getGlobalSessionCookie();
       
+      // If global cookie is missing, kick back to the specified return URL
       if (!user) {
-        window.location.href = "https://basicallydevyt.github.io/main/AccountService/";
+        window.location.href = AUTH_REDIRECT_URL;
         return;
       }
 
-      // Populate baseline details
+      // Populate interface using the global cookie properties
       document.getElementById('username').textContent = user.name;
       document.getElementById('display-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
 
       const badgeImg = document.getElementById('display-badge');
       const roleTxt = document.getElementById('role-display');
 
-      const provider = user.provider ? user.provider.toLowerCase() : "discord";
-      const userId = getUserId(user);
-
       try {
         const response = await fetch(ROLES_JSON_URL);
-        if (!response.ok) throw new Error("Could not load roles file");
+        if (!response.ok) throw new Error("Could not load privileges");
         const roles = await response.json();
 
-        // 1. Check Creator Tier
-        const creators = (roles.creator && roles.creator[provider]) || [];
-        if (userId && creators.includes(userId)) {
+        const platform = user.provider; // Expected 'discord' or 'google'
+        let userKey = null;
+
+        if (platform === 'discord') {
+          // Pulls ID directly from your session cookie configuration
+          userKey = user.id;
+          if (!userKey && user.avatar) {
+            const discMatch = user.avatar.match(/\/avatars\/([0-9]+)\//);
+            if (discMatch) userKey = discMatch[1];
+          }
+        } else if (platform === 'google') {
+          // On-the-fly Base64 hashing for privacy safety
+          if (user.email) {
+            userKey = btoa(user.email.toLowerCase().trim());
+          }
+        }
+
+        if (!userKey) throw new Error("Missing identification token");
+
+        // --- Role Verification Checks ---
+        
+        // 1. Creator Tier
+        if (roles.creator && roles.creator[platform] && roles.creator[platform].includes(userKey)) {
           badgeImg.src = ICON_BASE + "Creator.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Creator";
           roleTxt.style.color = "#ff4500";
         } 
-        // 2. Check Moderator Tier
-        else if (userId && roles.moderators && roles.moderators[provider] && roles.moderators[provider][userId]) {
-          const modType = roles.moderators[provider][userId].toLowerCase();
+        // 2. Moderator Tiers
+        else if (roles.moderators && roles.moderators[platform] && roles.moderators[platform][userKey]) {
+          const modType = roles.moderators[platform][userKey].toLowerCase();
           
           if (modType === "elder") {
             badgeImg.src = ICON_BASE + "ElderModerator.webp";
@@ -163,14 +167,14 @@
           }
           badgeImg.style.display = "block";
         } 
-        // 3. Check Featured Tier
-        else if (userId && roles.featured && roles.featured[provider] && roles.featured[provider].includes(userId)) {
+        // 3. Featured Lists
+        else if (roles.featured && roles.featured[platform] && roles.featured[platform].includes(userKey)) {
           badgeImg.src = ICON_BASE + "Featured.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Featured User";
           roleTxt.style.color = "#ffcc00";
         } 
-        // 4. Default Base User Tier
+        // 4. Base Member Tier
         else {
           roleTxt.textContent = "Member";
           roleTxt.style.color = "#a1a1aa";
@@ -178,7 +182,7 @@
 
       } catch (err) {
         console.error("Privilege lookup failed:", err);
-        badgeImg.src = ICON_BASE + "Error.png"; // Shows full, uncropped error icon
+        badgeImg.src = ICON_BASE + "Error.png"; // Stays uncropped
         badgeImg.style.display = "block";
         roleTxt.textContent = "Error Loading Roles";
         roleTxt.style.color = "#ff453a";
