@@ -120,7 +120,8 @@
         if (!response.ok) throw new Error("Could not load privileges");
         const roles = await response.json();
 
-        const platform = user.provider; 
+        // Standardize provider validation to avoid case mismatches
+        const platform = String(user.provider || '').toLowerCase().trim(); 
         let userKey = null;
 
         if (platform === 'discord') {
@@ -129,9 +130,10 @@
             const discMatch = user.avatar.match(/\/avatars\/([0-9]+)\//);
             if (discMatch) userKey = discMatch[1];
           }
-        } else if (platform === 'google') {
+        } else if (platform === 'google' || user.email) {
+          // If it has an email field, handle it under the Google configuration branch
           if (user.email) {
-            const rawUserEmail = user.email.toLowerCase().trim();
+            const rawUserEmail = String(user.email).toLowerCase().trim();
             
             // Decodes the Base64 strings from roles.json to find a match
             const isCreator = roles.creator && roles.creator.google && roles.creator.google.some(encodedEmail => {
@@ -171,17 +173,18 @@
         if (!userKey) throw new Error("Missing identification token");
 
         // --- Role Verification Checks ---
+        const lookupPlatform = (platform === 'discord') ? 'discord' : 'google';
         
         // 1. Creator Tier
-        if (roles.creator && roles.creator[platform] && roles.creator[platform].includes(userKey)) {
+        if (roles.creator && roles.creator[lookupPlatform] && roles.creator[lookupPlatform].includes(userKey)) {
           badgeImg.src = ICON_BASE + "Creator.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Creator";
           roleTxt.style.color = "#ff4500";
         } 
         // 2. Moderator Tiers
-        else if (roles.moderators && roles.moderators[platform] && roles.moderators[platform][userKey]) {
-          const modType = roles.moderators[platform][userKey].toLowerCase();
+        else if (roles.moderators && roles.moderators[lookupPlatform] && roles.moderators[lookupPlatform][userKey]) {
+          const modType = roles.moderators[lookupPlatform][userKey].toLowerCase();
           
           if (modType === "elder") {
             badgeImg.src = ICON_BASE + "ElderModerator.webp";
@@ -199,7 +202,7 @@
           badgeImg.style.display = "block";
         } 
         // 3. Featured Lists
-        else if (roles.featured && roles.featured[platform] && roles.featured[platform].includes(userKey)) {
+        else if (roles.featured && roles.featured[lookupPlatform] && roles.featured[lookupPlatform].includes(userKey)) {
           badgeImg.src = ICON_BASE + "Featured.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Featured User";
