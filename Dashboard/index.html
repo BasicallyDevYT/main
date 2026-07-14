@@ -128,7 +128,7 @@
   <script>
     const ICON_BASE = "https://basicallydevyt.github.io/main/WebsiteIcons/";
     const ROLES_JSON_URL = "roles.json";
-    const AUTH_REDIRECT_URL = "https://basicallydevyt.github.io/main/AccountService/?return=main/Dashboard";
+    const AUTH_REDIRECT_URL = "https://basicallydevyt.github.io/main/AccountService/?signout=main/Dashboard";
 
     // Reads ONLY the global user_session cookie
     function getGlobalSessionCookie() {
@@ -144,7 +144,6 @@
 
     // Erases the cookie safely by setting it to expire immediately
     function handleSignOut() {
-      document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       window.location.href = AUTH_REDIRECT_URL;
     }
 
