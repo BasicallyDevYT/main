@@ -102,13 +102,13 @@
     window.addEventListener('DOMContentLoaded', async function() {
       const user = getGlobalSessionCookie();
       
-      // If global cookie is missing, kick back to login page
+      // If global cookie is missing completely, send to login
       if (!user) {
         window.location.href = AUTH_REDIRECT_URL;
         return;
       }
 
-      // Populate basic info
+      // Populate interface data
       document.getElementById('username').textContent = user.name;
       document.getElementById('display-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
 
@@ -120,96 +120,84 @@
         if (!response.ok) throw new Error("Could not load privileges");
         const roles = await response.json();
 
-        // Standardize provider validation to avoid case mismatches
         const platform = String(user.provider || '').toLowerCase().trim(); 
-        let userKey = null;
+        let matchedKey = null;
+        let roleFound = "Member"; // Default fallback tier
 
         if (platform === 'discord') {
-          userKey = user.id;
-          if (!userKey && user.avatar) {
-            const discMatch = user.avatar.match(/\/avatars\/([0-9]+)\//);
-            if (discMatch) userKey = discMatch[1];
+          const discordId = user.id;
+          
+          if (roles.creator && roles.creator.discord && roles.creator.discord.includes(discordId)) {
+            roleFound = "Creator";
+          } else if (roles.moderators && roles.moderators.discord && roles.moderators.discord[discordId]) {
+            roleFound = roles.moderators.discord[discordId];
+          } else if (roles.featured && roles.featured.discord && roles.featured.discord.includes(discordId)) {
+            roleFound = "Featured";
           }
-        } else if (platform === 'google' || user.email) {
-          // If it has an email field, handle it under the Google configuration branch
-          if (user.email) {
-            const rawUserEmail = String(user.email).toLowerCase().trim();
-            
-            // Decodes the Base64 strings from roles.json to find a match
-            const isCreator = roles.creator && roles.creator.google && roles.creator.google.some(encodedEmail => {
+        } 
+        else if (platform === 'google' && user.email) {
+          const rawUserEmail = String(user.email).toLowerCase().trim();
+          
+          // 1. Check Creator List by decoding the Base64 JSON strings
+          const isCreator = roles.creator && roles.creator.google && roles.creator.google.some(encodedEmail => {
+            try {
+              return atob(encodedEmail).toLowerCase().trim() === rawUserEmail;
+            } catch(e) { return false; }
+          });
+          if (isCreator) roleFound = "Creator";
+
+          // 2. Check Moderator Objects by decoding the Base64 JSON keys
+          if (roleFound === "Member" && roles.moderators && roles.moderators.google) {
+            for (const encodedEmail in roles.moderators.google) {
+              try {
+                if (atob(encodedEmail).toLowerCase().trim() === rawUserEmail) {
+                  roleFound = roles.moderators.google[encodedEmail];
+                  break;
+                }
+              } catch(e) {}
+            }
+          }
+
+          // 3. Check Featured Lists by decoding the Base64 JSON strings
+          if (roleFound === "Member" && roles.featured && roles.featured.google) {
+            const isFeatured = roles.featured.google.some(encodedEmail => {
               try {
                 return atob(encodedEmail).toLowerCase().trim() === rawUserEmail;
               } catch(e) { return false; }
             });
-
-            if (isCreator) {
-              userKey = roles.creator.google[0]; 
-            }
-            
-            if (!userKey && roles.moderators && roles.moderators.google) {
-              for (const encodedEmail in roles.moderators.google) {
-                try {
-                  if (atob(encodedEmail).toLowerCase().trim() === rawUserEmail) {
-                    userKey = encodedEmail;
-                    break;
-                  }
-                } catch(e) {}
-              }
-            }
-
-            if (!userKey && roles.featured && roles.featured.google) {
-              const isFeatured = roles.featured.google.some(encodedEmail => {
-                try {
-                  return atob(encodedEmail).toLowerCase().trim() === rawUserEmail;
-                } catch(e) { return false; }
-              });
-              if (isFeatured) {
-                userKey = roles.featured.google.find(encodedEmail => atob(encodedEmail).toLowerCase().trim() === rawUserEmail);
-              }
-            }
+            if (isFeatured) roleFound = "Featured";
           }
         }
 
-        if (!userKey) throw new Error("Missing identification token");
+        // --- Apply UI Assets based on resolved role string ---
+        const cleanRole = String(roleFound).toLowerCase().trim();
 
-        // --- Role Verification Checks ---
-        const lookupPlatform = (platform === 'discord') ? 'discord' : 'google';
-        
-        // 1. Creator Tier
-        if (roles.creator && roles.creator[lookupPlatform] && roles.creator[lookupPlatform].includes(userKey)) {
+        if (cleanRole === "creator") {
           badgeImg.src = ICON_BASE + "Creator.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Creator";
           roleTxt.style.color = "#ff4500";
-        } 
-        // 2. Moderator Tiers
-        else if (roles.moderators && roles.moderators[lookupPlatform] && roles.moderators[lookupPlatform][userKey]) {
-          const modType = roles.moderators[lookupPlatform][userKey].toLowerCase();
-          
-          if (modType === "elder") {
-            badgeImg.src = ICON_BASE + "ElderModerator.webp";
-            roleTxt.textContent = "Elder Moderator";
-            roleTxt.style.color = "#ff2d55";
-          } else if (modType === "trusted") {
-            badgeImg.src = ICON_BASE + "LeaderboardModerator.webp";
-            roleTxt.textContent = "Trusted Moderator";
-            roleTxt.style.color = "#af52de";
-          } else {
-            badgeImg.src = ICON_BASE + "Moderator.webp";
-            roleTxt.textContent = "Moderator";
-            roleTxt.style.color = "#34c759";
-          }
+        } else if (cleanRole === "elder") {
+          badgeImg.src = ICON_BASE + "ElderModerator.webp";
           badgeImg.style.display = "block";
-        } 
-        // 3. Featured Lists
-        else if (roles.featured && roles.featured[lookupPlatform] && roles.featured[lookupPlatform].includes(userKey)) {
+          roleTxt.textContent = "Elder Moderator";
+          roleTxt.style.color = "#ff2d55";
+        } else if (cleanRole === "trusted") {
+          badgeImg.src = ICON_BASE + "LeaderboardModerator.webp";
+          badgeImg.style.display = "block";
+          roleTxt.textContent = "Trusted Moderator";
+          roleTxt.style.color = "#af52de";
+        } else if (cleanRole === "moderator" || cleanRole === "normal") {
+          badgeImg.src = ICON_BASE + "Moderator.webp";
+          badgeImg.style.display = "block";
+          roleTxt.textContent = "Moderator";
+          roleTxt.style.color = "#34c759";
+        } else if (cleanRole === "featured") {
           badgeImg.src = ICON_BASE + "Featured.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Featured User";
           roleTxt.style.color = "#ffcc00";
-        } 
-        // 4. Base Member Tier
-        else {
+        } else {
           roleTxt.textContent = "Member";
           roleTxt.style.color = "#a1a1aa";
         }
