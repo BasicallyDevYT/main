@@ -182,7 +182,7 @@
 
       if (signOut) {
          deleteSharedCookie(getSessionCookieName());
-         window.location.href = "https://basicallydevyt.github.io/" + signOut;
+         window.location.href = "https://basicallydevyt.github.io/main/AccountService/?return=" + signOut;
       }
       // 2. Read the accurate session cookie for the requested scope
       const activeSession = getSharedCookie(getSessionCookieName());
