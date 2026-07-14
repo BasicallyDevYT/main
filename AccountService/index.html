@@ -164,31 +164,39 @@
     }
 
     // --- App Initializer ---
+// Listener 1: Handles immediate Sign-Out requests cleanly with NO casing bugs
+    window.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const signOut = urlParams.get('signout');
+      
+      if (signOut) {
+        deleteSharedCookie(getSessionCookieName());
+        // Force the browser straight to the clean login page with your target return path preserved in perfect casing
+        window.location.href = "https://basicallydevyt.github.io/main/AccountService/?return=" + signOut;
+      }
+    });
+
+    // Listener 2: Handles normal Login / Dynamic UI filtering 
     window.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
       const onlyWith = urlParams.get('onlywith')?.toLowerCase();
-
-      const signOut = urlParams.get('signout');
       
       const googleWrapper = document.getElementById('google-btn-wrapper');
       const discordBtn = document.getElementById('discord-auth-btn');
 
-      // 1. Visually filter buttons using display styles
       if (onlyWith === 'google') {
         if (discordBtn) discordBtn.style.display = 'none';
       } else if (onlyWith === 'discord') {
         if (googleWrapper) googleWrapper.style.display = 'none';
       }
 
-      if (signOut) {
-         deleteSharedCookie(getSessionCookieName());
-         window.location.href = "https://basicallydevyt.github.io/main/AccountService/?return=" + signOut;
-      }
-      // 2. Read the accurate session cookie for the requested scope
-      const activeSession = getSharedCookie(getSessionCookieName());
-      if (activeSession) {
-        displayUserProfile(activeSession);
-        handleNavigationRedirect(); 
+      // Read session cookie safely without interfering with the sign-out loop
+      if (!urlParams.has('signout')) {
+        const activeSession = getSharedCookie(getSessionCookieName());
+        if (activeSession) {
+          displayUserProfile(activeSession);
+          handleNavigationRedirect(); 
+        }
       }
     });
   </script>
