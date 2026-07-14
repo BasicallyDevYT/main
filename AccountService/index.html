@@ -36,11 +36,10 @@
       let nameEQ = name + "=";
       let ca = document.cookie.split(';');
       for(let i=0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        let c = ca[i].trim();
         if (c.indexOf(nameEQ) == 0) {
           try {
-            return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+            return JSON.parse(decodeURIComponent(c.substring(nameEQ.length)));
           } catch(e) {
             return null;
           }
@@ -120,6 +119,7 @@
         }
 
         const userData = {
+          id: user.id,
           name: user.username,
           email: user.email || 'No verified email',
           avatar: avatarUrl,
@@ -163,11 +163,21 @@
       window.location.reload();
     }
 
-    // --- App Initializer ---
-// Listener 1: Handles immediate Sign-Out requests cleanly with NO casing bugs
+    // --- App Initializers ---
+
+    // Listener 1: Extracts raw signout path tags while fully preserving case-sensitivity
     window.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-      
+      const rawSearch = window.location.search;
+      if (!rawSearch) return;
+
+      const match = rawSearch.match(/[?&]signout=([^&]+)/);
+      if (match) {
+        const rawSignOutPath = decodeURIComponent(match[1]); 
+        deleteSharedCookie(getSessionCookieName());
+        window.location.href = "https://basicallydevyt.github.io/main/AccountService/?return=" + rawSignOutPath;
+      }
+    });
+
     // Listener 2: Handles normal Login / Dynamic UI filtering 
     window.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -180,6 +190,15 @@
         if (discordBtn) discordBtn.style.display = 'none';
       } else if (onlyWith === 'discord') {
         if (googleWrapper) googleWrapper.style.display = 'none';
+      }
+
+      // Check active session states when not clearing cookies
+      if (!urlParams.has('signout')) {
+        const activeSession = getSharedCookie(getSessionCookieName());
+        if (activeSession) {
+          displayUserProfile(activeSession);
+          handleNavigationRedirect(); 
+        }
       }
     });
   </script>
