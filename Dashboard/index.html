@@ -158,10 +158,14 @@
 
     // Erases the cookie safely by setting it to expire immediately
     function handleSignOut() {
+      window.location.href = AUTH_REDIRECT_URL;
+    }
+
+    function handleSignOut() {
       // Clear cookie names dynamically across paths to ensure cleanup
       document.cookie = "user_session=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       document.cookie = "user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      window.location.href = AUTH_REDIRECT_URL;
+      window.location.href = "https://basicallydevyt.github.io/main/AccountService/?signout=main/Dashboard";
     }
 
     window.addEventListener('DOMContentLoaded', async function() {
@@ -303,7 +307,7 @@
 
     <div id="logged-out-view" style="display: none; width: 100%; text-align: center;">
       <h2 class="user-name" style="margin-bottom: 20px;">Access Dashboard</h2>
-      <a id="login-link" href="#" class="btn btn-login">Log In</a>
+      <button onclick="handleLogIn()" class="btn btn-login">Log in</button>
     </div>
 
   </div>
