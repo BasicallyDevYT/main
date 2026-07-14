@@ -123,12 +123,26 @@
     .btn-signout:hover {
       background-color: #ff3b30;
     }
+
+    /* Sleek Blue Login Button Style */
+    .btn-login {
+      display: block;
+      width: 100%;
+      background-color: #007aff;
+      color: #ffffff;
+      border: 1px solid transparent;
+      box-sizing: border-box;
+    }
+
+    .btn-login:hover {
+      background-color: #0062cc;
+    }
   </style>
 
   <script>
     const ICON_BASE = "https://basicallydevyt.github.io/main/WebsiteIcons/";
     const ROLES_JSON_URL = "roles.json";
-    const AUTH_REDIRECT_URL = "https://basicallydevyt.github.io/main/AccountService/?signout=main/Dashboard";
+    const AUTH_REDIRECT_URL = "https://basicallydevyt.github.io/main/AccountService/?return=main/Dashboard";
 
     // Reads ONLY the global user_session cookie
     function getGlobalSessionCookie() {
@@ -144,17 +158,26 @@
 
     // Erases the cookie safely by setting it to expire immediately
     function handleSignOut() {
+      // Clear cookie names dynamically across paths to ensure cleanup
+      document.cookie = "user_session=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       window.location.href = AUTH_REDIRECT_URL;
     }
 
     window.addEventListener('DOMContentLoaded', async function() {
       const user = getGlobalSessionCookie();
       
-      // If global cookie is missing completely, send to login
+      // If global cookie is completely missing, change layouts to show login button instead of profile
       if (!user) {
-        window.location.href = AUTH_REDIRECT_URL;
+        document.getElementById('logged-in-view').style.display = 'none';
+        document.getElementById('logged-out-view').style.display = 'block';
+        document.getElementById('login-link').href = AUTH_REDIRECT_URL;
         return;
       }
+
+      // Ensure the logged-in setup is visible
+      document.getElementById('logged-in-view').style.display = 'flex';
+      document.getElementById('logged-out-view').style.display = 'none';
 
       // Populate interface data
       document.getElementById('username').textContent = user.name;
@@ -262,18 +285,27 @@
 <body>
 
   <div class="profile-card">
-    <div class="avatar-wrapper">
-      <img id="display-avatar" class="user-avatar" src="" alt="Avatar">
-      <img id="display-badge" class="role-badge" src="" alt="Badge">
-    </div>
     
-    <h2 id="username" class="user-name">Loading...</h2>
-    <div id="role-display" class="role-label">Connecting...</div>
+    <div id="logged-in-view" style="display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%;">
+      <div class="avatar-wrapper">
+        <img id="display-avatar" class="user-avatar" src="" alt="Avatar">
+        <img id="display-badge" class="role-badge" src="" alt="Badge">
+      </div>
+      
+      <h2 id="username" class="user-name">Loading...</h2>
+      <div id="role-display" class="role-label">Connecting...</div>
 
-    <div class="button-group">
-      <a href="https://basicallydevyt.github.io/main/" class="btn btn-exit">Exit</a>
-      <button onclick="handleSignOut()" class="btn btn-signout">Sign Out</button>
+      <div class="button-group">
+        <a href="https://basicallydevyt.github.io/main/" class="btn btn-exit">Exit</a>
+        <button onclick="handleSignOut()" class="btn btn-signout">Sign Out</button>
+      </div>
     </div>
+
+    <div id="logged-out-view" style="display: none; width: 100%; text-align: center;">
+      <h2 class="user-name" style="margin-bottom: 20px;">Access Dashboard</h2>
+      <a id="login-link" href="#" class="btn btn-login">Log In</a>
+    </div>
+
   </div>
 
 </body>
