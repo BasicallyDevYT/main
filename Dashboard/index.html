@@ -80,6 +80,49 @@
       letter-spacing: 1px;
       margin: 0;
     }
+
+    /* Navigation Action Buttons Group */
+    .button-group {
+      display: flex;
+      width: 100%;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    /* Exit Button Style */
+    .btn-exit {
+      background-color: transparent;
+      color: #fafafa;
+      border: 1px solid #27272a;
+    }
+
+    .btn-exit:hover {
+      background-color: #1c1c1e;
+      border-color: #3f3f46;
+    }
+
+    /* Sign Out Button Style */
+    .btn-signout {
+      background-color: #ff453a;
+      color: #ffffff;
+      border: 1px solid transparent;
+    }
+
+    .btn-signout:hover {
+      background-color: #ff3b30;
+    }
   </style>
 
   <script>
@@ -99,7 +142,12 @@
       return null;
     }
 
-    console.log(getGlobalSessionCookie())
+    // Erases the cookie safely by setting it to expire immediately
+    function handleSignOut() {
+      document.cookie = "user_session=; path=/; domain=basicallydevyt.github.io; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+      document.cookie = "user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+      window.location.href = AUTH_REDIRECT_URL;
+    }
 
     window.addEventListener('DOMContentLoaded', async function() {
       const user = getGlobalSessionCookie();
@@ -123,8 +171,7 @@
         const roles = await response.json();
 
         const platform = String(user.provider || '').toLowerCase().trim(); 
-        let matchedKey = null;
-        let roleFound = "Member"; // Default fallback tier
+        let roleFound = "Member"; 
 
         if (platform === 'discord') {
           const discordId = user.id;
@@ -140,7 +187,7 @@
         else if (platform === 'google' && user.email) {
           const rawUserEmail = String(user.email).toLowerCase().trim();
           
-          // 1. Check Creator List by decoding the Base64 JSON strings
+          // 1. Check Creator List
           const isCreator = roles.creator && roles.creator.google && roles.creator.google.some(encodedEmail => {
             try {
               return atob(encodedEmail).toLowerCase().trim() === rawUserEmail;
@@ -148,7 +195,7 @@
           });
           if (isCreator) roleFound = "Creator";
 
-          // 2. Check Moderator Objects by decoding the Base64 JSON keys
+          // 2. Check Moderator Objects
           if (roleFound === "Member" && roles.moderators && roles.moderators.google) {
             for (const encodedEmail in roles.moderators.google) {
               try {
@@ -160,7 +207,7 @@
             }
           }
 
-          // 3. Check Featured Lists by decoding the Base64 JSON strings
+          // 3. Check Featured Lists
           if (roleFound === "Member" && roles.featured && roles.featured.google) {
             const isFeatured = roles.featured.google.some(encodedEmail => {
               try {
@@ -224,6 +271,11 @@
     
     <h2 id="username" class="user-name">Loading...</h2>
     <div id="role-display" class="role-label">Connecting...</div>
+
+    <div class="button-group">
+      <a href="https://basicallydevyt.github.io/main/" class="btn btn-exit">Exit</a>
+      <button onclick="handleSignOut()" class="btn btn-signout">Sign Out</button>
+    </div>
   </div>
 
 </body>
