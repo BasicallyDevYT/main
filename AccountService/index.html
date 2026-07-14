@@ -172,7 +172,7 @@
       if (signOut) {
         deleteSharedCookie(getSessionCookieName());
         // Force the browser straight to the clean login page with your target return path preserved in perfect casing
-        window.location.href = "https://basicallydevyt.github.io/main/AccountService/?return=" + signOut;
+        window.location.href = "https://basicallydevyt.github.io/main/" + signOut;
       }
     });
 
