@@ -167,6 +167,8 @@
     window.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
       const onlyWith = urlParams.get('onlywith')?.toLowerCase();
+
+      const signOut = urlParams.get('signout')?.toLowerCase();
       
       const googleWrapper = document.getElementById('google-btn-wrapper');
       const discordBtn = document.getElementById('discord-auth-btn');
@@ -178,6 +180,10 @@
         if (googleWrapper) googleWrapper.style.display = 'none';
       }
 
+      if (signout) {
+         deleteSharedCookie(getSessionCookieName());
+         window.location.href = "https://basicallydevyt.github.io/" + signout;
+      }
       // 2. Read the accurate session cookie for the requested scope
       const activeSession = getSharedCookie(getSessionCookieName());
       if (activeSession) {
