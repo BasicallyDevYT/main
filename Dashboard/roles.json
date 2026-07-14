@@ -1,9 +1,20 @@
 {
-  "creator": [
-    "basically_dev"
-  ],
-  "featured": [
-  ],
+  "creator": {
+    "discord": [
+      "1255884482892923023"
+    ],
+    "google": [
+      "115982846876523910328"
+    ]
+  },
+  "featured": {
+    "discord": [],
+    "google": []
+  },
   "moderators": {
+    "discord": {
+    },
+    "google": {
+    }
   }
 }
