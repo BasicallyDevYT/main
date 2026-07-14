@@ -8,7 +8,7 @@
     /* Sleek, Jet-Black Modern Aesthetic */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #09090b; /* Pure dark zinc/black background */
+      background-color: #09090b;
       color: #fafafa;
       display: flex;
       align-items: center;
@@ -20,8 +20,8 @@
 
     /* Minimalist Profile Card */
     .profile-card {
-      background-color: #121214; /* Deep charcoal black card */
-      border: 1px solid #27272a; /* Soft dark border */
+      background-color: #121214;
+      border: 1px solid #27272a;
       border-radius: 16px;
       padding: 32px;
       width: 320px;
@@ -47,7 +47,7 @@
       background-color: #1c1c1e;
     }
 
-    /* Absolute Center/Corner Layout for Badge (Uncropped) */
+    /* Badge Overlay Layout */
     .role-badge {
       position: absolute;
       bottom: 0;
@@ -55,7 +55,7 @@
       width: 32px;
       height: 32px;
       display: none; /* Shown dynamically via JS */
-      object-fit: contain; /* Prevents any cropping of the badge icon */
+      object-fit: contain; /* Prevents cropping */
       background: #121214;
       border-radius: 50%;
       border: 2px solid #27272a;
@@ -75,7 +75,7 @@
     .role-label {
       font-size: 0.85rem;
       font-weight: 600;
-      color: #a1a1aa; /* Muted gray text */
+      color: #a1a1aa;
       text-transform: uppercase;
       letter-spacing: 1px;
       margin: 0;
@@ -100,6 +100,19 @@
       return null;
     }
 
+    // Helper to resolve the user's ID regardless of platform state
+    function getUserId(user) {
+      if (user.id) return String(user.id);
+      
+      // Fallback: extract Discord ID from avatar URL if user.id is not stored directly
+      if (user.provider === "discord" && user.avatar) {
+        const match = user.avatar.match(/\/avatars\/(\d+)\//);
+        if (match) return match[1];
+      }
+      
+      return null;
+    }
+
     window.addEventListener('DOMContentLoaded', async function() {
       const user = getSessionCookie();
       
@@ -108,28 +121,32 @@
         return;
       }
 
-      // Set baseline username and avatar
+      // Populate baseline details
       document.getElementById('username').textContent = user.name;
       document.getElementById('display-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
 
       const badgeImg = document.getElementById('display-badge');
       const roleTxt = document.getElementById('role-display');
 
+      const provider = user.provider ? user.provider.toLowerCase() : "discord";
+      const userId = getUserId(user);
+
       try {
         const response = await fetch(ROLES_JSON_URL);
-        if (!response.ok) throw new Error("Could not load privileges");
+        if (!response.ok) throw new Error("Could not load roles file");
         const roles = await response.json();
 
-        const usernameLower = user.name.toLowerCase();
-
-        if (roles.creator && roles.creator.map(u => u.toLowerCase()).includes(usernameLower)) {
+        // 1. Check Creator Tier
+        const creators = (roles.creator && roles.creator[provider]) || [];
+        if (userId && creators.includes(userId)) {
           badgeImg.src = ICON_BASE + "Creator.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Creator";
           roleTxt.style.color = "#ff4500";
         } 
-        else if (roles.moderators && roles.moderators[user.name]) {
-          const modType = roles.moderators[user.name].toLowerCase();
+        // 2. Check Moderator Tier
+        else if (userId && roles.moderators && roles.moderators[provider] && roles.moderators[provider][userId]) {
+          const modType = roles.moderators[provider][userId].toLowerCase();
           
           if (modType === "elder") {
             badgeImg.src = ICON_BASE + "ElderModerator.webp";
@@ -146,12 +163,14 @@
           }
           badgeImg.style.display = "block";
         } 
-        else if (roles.featured && roles.featured.map(u => u.toLowerCase()).includes(usernameLower)) {
+        // 3. Check Featured Tier
+        else if (userId && roles.featured && roles.featured[provider] && roles.featured[provider].includes(userId)) {
           badgeImg.src = ICON_BASE + "Featured.png";
           badgeImg.style.display = "block";
           roleTxt.textContent = "Featured User";
           roleTxt.style.color = "#ffcc00";
         } 
+        // 4. Default Base User Tier
         else {
           roleTxt.textContent = "Member";
           roleTxt.style.color = "#a1a1aa";
@@ -159,7 +178,7 @@
 
       } catch (err) {
         console.error("Privilege lookup failed:", err);
-        badgeImg.src = ICON_BASE + "Error.png"; // Safely display unmodified, uncropped error icon
+        badgeImg.src = ICON_BASE + "Error.png"; // Shows full, uncropped error icon
         badgeImg.style.display = "block";
         roleTxt.textContent = "Error Loading Roles";
         roleTxt.style.color = "#ff453a";
