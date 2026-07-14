@@ -180,9 +180,9 @@
         if (googleWrapper) googleWrapper.style.display = 'none';
       }
 
-      if (signout) {
+      if (signOut) {
          deleteSharedCookie(getSessionCookieName());
-         window.location.href = "https://basicallydevyt.github.io/" + signout;
+         window.location.href = "https://basicallydevyt.github.io/" + signOut;
       }
       // 2. Read the accurate session cookie for the requested scope
       const activeSession = getSharedCookie(getSessionCookieName());
