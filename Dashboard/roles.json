@@ -9,12 +9,11 @@
   },
   "featured": {
     "discord": [],
-    "google": []
+    "google": ["cm9ibG94aGFja2VyZ3B0QGdtYWlsLmNvbQ=="]
   },
   "moderators": {
     "discord": {},
     "google": {
-      "cm9ibG94aGFja2VyZ3B0QGdtYWlsLmNvbQ==": "trial_mod"
     }
   }
 }
