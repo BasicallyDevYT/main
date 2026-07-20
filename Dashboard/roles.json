@@ -9,12 +9,12 @@
   },
   "featured": {
     "discord": [],
-    "google": ["cm9ibG94aGFja2VyZ3B0QGdtYWlsLmNvbQ=="]
+    "google": []
   },
   "moderators": {
-    "discord": {
-    },
+    "discord": {},
     "google": {
+      "cm9ibG94aGFja2VyZ3B0QGdtYWlsLmNvbQ==": "elder"
     }
   }
 }
