@@ -5,319 +5,237 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
   <style>
-    /* Sleek, Jet-Black Modern Aesthetic */
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #09090b;
-      color: #fafafa;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      box-sizing: border-box;
+    :root {
+      --bg-main: #0b0c10;
+      --bg-card: #1f2833;
+      --text-main: #c5c6c7;
+      --text-bright: #66fcf1;
+      --accent: #45f3ff;
     }
 
-    /* Minimalist Profile Card */
-    .profile-card {
-      background-color: #121214;
-      border: 1px solid #27272a;
-      border-radius: 16px;
-      padding: 32px;
-      width: 320px;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 260px;
+      background-color: #12161c;
+      border-right: 1px solid #242936;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      padding: 20px;
     }
 
-    /* Profile Avatar Container */
-    .avatar-wrapper {
-      position: relative;
-      display: inline-block;
-    }
-
-    .user-avatar {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      border: 2px solid #27272a;
-      object-fit: cover;
-      background-color: #1c1c1e;
-    }
-
-    /* Absolute Center/Corner Layout for Badge (Uncropped) */
-    .role-badge {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 32px;
-      height: 32px;
-      display: none;
-      object-fit: contain;
-      background: #121214;
-      border-radius: 50%;
-      border: 2px solid #27272a;
-      padding: 2px;
-    }
-
-    /* Username & Role Text styling */
-    .user-name {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin: 0;
-      letter-spacing: -0.5px;
-      text-align: center;
-    }
-
-    .role-label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #a1a1aa;
-      text-transform: uppercase;
+    .sidebar-brand {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--text-bright);
+      margin-bottom: 30px;
       letter-spacing: 1px;
-      margin: 0;
     }
 
-    /* Navigation Action Buttons Group */
-    .button-group {
+    .sidebar-menu {
+      list-style: none;
       display: flex;
-      width: 100%;
-      gap: 12px;
-      margin-top: 12px;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .btn {
-      flex: 1;
-      padding: 10px 16px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      text-align: center;
+    .sidebar-item a {
+      color: var(--text-main);
       text-decoration: none;
-      transition: all 0.2s ease;
-    }
-
-    /* Exit Button Style */
-    .btn-exit {
-      background-color: transparent;
-      color: #fafafa;
-      border: 1px solid #27272a;
-    }
-
-    .btn-exit:hover {
-      background-color: #1c1c1e;
-      border-color: #3f3f46;
-    }
-
-    /* Sign Out Button Style */
-    .btn-signout {
-      background-color: #ff453a;
-      color: #ffffff;
-      border: 1px solid transparent;
-    }
-
-    .btn-signout:hover {
-      background-color: #ff3b30;
-    }
-
-    /* Sleek Blue Login Button Style */
-    .btn-login {
+      font-size: 16px;
+      padding: 12px 16px;
       display: block;
-      width: 100%;
-      background-color: #007aff;
-      color: #ffffff;
-      border: 1px solid transparent;
-      box-sizing: border-box;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
     }
 
-    .btn-login:hover {
-      background-color: #0062cc;
+    .sidebar-item a:hover, .sidebar-item.active a {
+      background-color: var(--bg-card);
+      color: var(--text-bright);
+    }
+
+    /* Main Dashboard Workspace */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      border-bottom: 1px solid #242936;
+      padding-bottom: 15px;
+    }
+
+    .header-bar h1 {
+      font-size: 28px;
+      color: #ffffff;
+    }
+
+    /* User Profile Display Component */
+    .profile-section {
+      background-color: var(--bg-card);
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 450px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .user-info-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .username-display {
+      font-size: 22px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    /* Dynamic Circle Badge Grid */
+    #role-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 50px; /* Forces perfectly circular ends */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
   </style>
-
-  <script>
-    const ICON_BASE = "https://basicallydevyt.github.io/main/WebsiteIcons/";
-    const ROLES_JSON_URL = "roles.json";
-    const AUTH_REDIRECT_URL = "https://basicallydevyt.github.io/main/AccountService/?return=main/Dashboard";
-
-    // Reads ONLY the global user_session cookie
-    function getGlobalSessionCookie() {
-      let ca = document.cookie.split(';');
-      for(let i=0; i < ca.length; i++) {
-        let c = ca[i].trim();
-        if (c.indexOf("user_session=") == 0) {
-          return JSON.parse(decodeURIComponent(c.substring("user_session=".length)));
-        }
-      }
-      return null;
-    }
-
-    function getSessionCookieName() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const onlyWith = urlParams.get('onlywith')?.toLowerCase();
-      
-      if (onlyWith === 'google') return 'google_session';
-      if (onlyWith === 'discord') return 'discord_session';
-      return 'user_session'; 
-    }
-
-    function deleteSharedCookie(name) {
-      document.cookie = name + "=; path=/main/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    }
-
-    // Erases the cookie safely by setting it to expire immediately
-    function handleSignOut() {
-      deleteSharedCookie(getSessionCookieName());
-      window.location.reload();
-    }
-
-    window.addEventListener('DOMContentLoaded', async function() {
-      const user = getGlobalSessionCookie();
-      
-      // If global cookie is completely missing, change layouts to show login button instead of profile
-      if (!user) {
-        document.getElementById('logged-in-view').style.display = 'none';
-        document.getElementById('logged-out-view').style.display = 'block';
-        document.getElementById('login-link').href = "https://basicallydevyt.github.io/main/AccountService/?return=main/Dashboard";
-        return;
-      }
-
-      // Ensure the logged-in setup is visible
-      document.getElementById('logged-in-view').style.display = 'flex';
-      document.getElementById('logged-out-view').style.display = 'none';
-
-      // Populate interface data
-      document.getElementById('username').textContent = user.name;
-      document.getElementById('display-avatar').src = user.avatar || 'https://www.gstatic.com/images/branding/product/2x/avatar_anonymous_64dp.png';
-
-      const badgeImg = document.getElementById('display-badge');
-      const roleTxt = document.getElementById('role-display');
-
-      try {
-        const response = await fetch(ROLES_JSON_URL);
-        if (!response.ok) throw new Error("Could not load privileges");
-        const roles = await response.json();
-
-        const platform = String(user.provider || '').toLowerCase().trim(); 
-        let roleFound = "Member"; 
-
-        if (platform === 'discord') {
-          const discordId = user.id;
-          
-          if (roles.creator && roles.creator.discord && roles.creator.discord.includes(discordId)) {
-            roleFound = "Creator";
-          } else if (roles.moderators && roles.moderators.discord && roles.moderators.discord[discordId]) {
-            roleFound = roles.moderators.discord[discordId];
-          } else if (roles.featured && roles.featured.discord && roles.featured.discord.includes(discordId)) {
-            roleFound = "Featured";
-          }
-        } 
-        else if (platform === 'google' && user.email) {
-          const rawUserEmail = String(user.email).toLowerCase().trim();
-          
-          // 1. Check Creator List
-          const isCreator = roles.creator && roles.creator.google && roles.creator.google.some(encodedEmail => {
-            try {
-              return atob(encodedEmail).toLowerCase().trim() === rawUserEmail;
-            } catch(e) { return false; }
-          });
-          if (isCreator) roleFound = "Creator";
-
-          // 2. Check Moderator Objects
-          if (roleFound === "Member" && roles.moderators && roles.moderators.google) {
-            for (const encodedEmail in roles.moderators.google) {
-              try {
-                if (atob(encodedEmail).toLowerCase().trim() === rawUserEmail) {
-                  roleFound = roles.moderators.google[encodedEmail];
-                  break;
-                }
-              } catch(e) {}
-            }
-          }
-
-          // 3. Check Featured Lists
-          if (roleFound === "Member" && roles.featured && roles.featured.google) {
-            const isFeatured = roles.featured.google.some(encodedEmail => {
-              try {
-                return atob(encodedEmail).toLowerCase().trim() === rawUserEmail;
-              } catch(e) { return false; }
-            });
-            if (isFeatured) roleFound = "Featured";
-          }
-        }
-
-        // --- Apply UI Assets based on resolved role string ---
-        const cleanRole = String(roleFound).toLowerCase().trim();
-
-        if (cleanRole === "creator") {
-          badgeImg.src = ICON_BASE + "Creator.png";
-          badgeImg.style.display = "block";
-          roleTxt.textContent = "Creator";
-          roleTxt.style.color = "#ff4500";
-        } else if (cleanRole === "elder") {
-          badgeImg.src = ICON_BASE + "ElderModerator.webp";
-          badgeImg.style.display = "block";
-          roleTxt.textContent = "Elder Moderator";
-          roleTxt.style.color = "#ff2d55";
-        } else if (cleanRole === "trusted") {
-          badgeImg.src = ICON_BASE + "LeaderboardModerator.webp";
-          badgeImg.style.display = "block";
-          roleTxt.textContent = "Trusted Moderator";
-          roleTxt.style.color = "#af52de";
-        } else if (cleanRole === "moderator" || cleanRole === "normal") {
-          badgeImg.src = ICON_BASE + "Moderator.webp";
-          badgeImg.style.display = "block";
-          roleTxt.textContent = "Moderator";
-          roleTxt.style.color = "#34c759";
-        } else if (cleanRole === "featured") {
-          badgeImg.src = ICON_BASE + "Featured.png";
-          badgeImg.style.display = "block";
-          roleTxt.textContent = "Featured User";
-          roleTxt.style.color = "#ffcc00";
-        } else {
-          roleTxt.textContent = "Member";
-          roleTxt.style.color = "#a1a1aa";
-        }
-
-      } catch (err) {
-        console.error("Privilege lookup failed:", err);
-        badgeImg.src = ICON_BASE + "Error.png"; 
-        badgeImg.style.display = "block";
-        roleTxt.textContent = "Error Loading Roles";
-        roleTxt.style.color = "#ff453a";
-      }
-    });
-  </script>
 </head>
 <body>
 
-  <div class="profile-card">
-    
-    <div id="logged-in-view" style="display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%;">
-      <div class="avatar-wrapper">
-        <img id="display-avatar" class="user-avatar" src="" alt="Avatar">
-        <img id="display-badge" class="role-badge" src="" alt="Badge">
+  <!-- Full Navigation Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">Console Panel</div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-item active"><a href="#">Dashboard</a></li>
+      <li class="sidebar-item"><a href="#">Moderation Logs</a></li>
+      <li class="sidebar-item"><a href="#">Database Config</a></li>
+      <li class="sidebar-item"><a href="#">Settings</a></li>
+    </ul>
+  </nav>
+
+  <!-- Complete Viewport Window -->
+  <main class="main-content">
+    <header class="header-bar">
+      <h1>Account Overview</h1>
+    </header>
+
+    <section class="profile-section">
+      <div class="user-info-wrapper">
+        <div class="username-display" id="user-display-name">Loading Profile...</div>
+        
+        <!-- Dynamic role circles inject precisely here -->
+        <div id="role-container"></div>
       </div>
-      
-      <h2 id="username" class="user-name">Loading...</h2>
-      <div id="role-display" class="role-label">Connecting...</div>
+    </section>
+  </main>
 
-      <div class="button-group">
-        <a href="https://basicallydevyt.github.io/main/" class="btn btn-exit">Exit</a>
-        <button onclick="handleSignOut()" class="btn btn-signout">Sign Out</button>
-      </div>
-    </div>
+  <script>
+    // 1. Unified Registry Mapping Valid System Ranks
+    const roleConfig = {
+      "creator": { text: "Creator", color: "#ff4757" },
+      "featured": { text: "Featured", color: "#ffa502" },
+      "elder": { text: "Elder Mod", color: "#2ed573" },
+      "moderator": { text: "Moderator", color: "#1e90ff" },
+      "trial_mod": { text: "Trial Mod", color: "#a4b0be" }
+    };
 
-    <div id="logged-out-view" style="display: none; width: 100%; text-align: center;">
-      <h2 class="user-name" style="margin-bottom: 20px;">Access Dashboard</h2>
-      <a id="login-link" href="#" class="btn btn-login">Log In</a>
-    </div>
+    // Base64 hashed identifier for the session account
+    const encodedEmail = "cm9ibG94aGFja2VyZ3B0QGdtYWlsLmNvbQ=="; 
 
-  </div>
+    // Simulation mapping display context strings
+    document.getElementById("user-display-name").innerText = "Administrator Account";
+
+    // 2. Fetch Core Database System File
+    fetch('./roles.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network configuration file could not be read");
+        }
+        return response.json();
+      })
+      .then(roles => {
+        let userRoles = [];
+
+        // Check Creator Arrays
+        if (roles.creator && roles.creator.google && roles.creator.google.includes(encodedEmail)) {
+          userRoles.push("creator");
+        }
+
+        // Check Featured Arrays
+        if (roles.featured && roles.featured.google && roles.featured.google.includes(encodedEmail)) {
+          userRoles.push("featured");
+        }
+
+        // Evaluate Structural Key Dictionary for Mod Tiers
+        if (roles.moderators && roles.moderators.google) {
+          const assignedModTier = roles.moderators.google[encodedEmail];
+          
+          if (assignedModTier && roleConfig[assignedModTier]) {
+            userRoles.push(assignedModTier);
+          }
+        }
+
+        // 3. Clear Canvas Container and Build Out Sequential Stacked Elements
+        const badgeContainer = document.getElementById("role-container");
+        badgeContainer.innerHTML = "";
+
+        if (userRoles.length > 0) {
+          userRoles.forEach(roleKey => {
+            const config = roleConfig[roleKey];
+            
+            const badge = document.createElement("span");
+            badge.className = "role-badge";
+            badge.innerText = config.text;
+            badge.style.backgroundColor = config.color;
+            
+            badgeContainer.appendChild(badge);
+          });
+        } else {
+          // Standard structural user label fallback
+          badgeContainer.innerHTML = '<span style="color: #555c66; font-size: 13px;">Standard User</span>';
+        }
+      })
+      .catch(err => {
+        console.error("Critical error reading file engine roles mapping:", err);
+        document.getElementById("role-container").innerHTML = '<span style="color: #ff4757; font-size: 12px;">Sync Error</span>';
+      });
+  </script>
 
 </body>
 </html>
