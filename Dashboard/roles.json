@@ -1,7 +1,8 @@
 {
   "creator": {
     "discord": [
-      "1255884482892923023"
+      "1255884482892923023",
+      "1517655043556245545"
     ],
     "google": [
       "am9yZGFudDkxMTFAZ21haWwuY29t"
@@ -9,12 +10,10 @@
   },
   "featured": {
     "discord": [],
-    "google": ["cm9ibG94aGFja2VyZ3B0QGdtYWlsLmNvbQ=="]
+    "google": []
   },
   "moderators": {
     "discord": {},
-    "google": {
-      "cm9ibG94aGFja2VyZ3B0QGdtYWlsLmNvbQ==": "trial_mod"
-    }
+    "google": {}
   }
 }
