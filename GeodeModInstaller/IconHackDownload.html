@@ -363,7 +363,7 @@
                                         </div>
                                         <div id="dynamic-steps-container" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
                                             <div class="guide-step" id="step-two-container">
-                                                <div class="guide-title" id="step2-heading">2. Install Geode</div>
+                                                <div class="guide-title" id="step2-heading">2. Download Geode</div>
                                                 <div id="step2-content">
                                                     <p class="error-msg">Select your OS first.</p>
                                                 </div>
@@ -450,13 +450,13 @@
                                         }
 
                                         if (selectedOS === 'Windows') {
-                                            step2Heading.innerText = "2. Install Geode";
+                                            step2Heading.innerText = "2. Download Geode";
                                             step2Content.innerHTML = '<a href="https://github.com/geode-sdk/geode/releases/download/v5.8.2/geode-installer-v5.8.2-win.exe" class="guide-btn">Download Geode</a>';
                                             step21Container.style.display = 'none';
 
                                             stepFourContent.innerHTML = '<a href="file:///C:/Program%20Files%20(x86)/Steam/steamapps/common/Geometry%20Dash/geode" class="guide-btn">Open mods folder</a>';
                                         } else if (selectedOS === 'MacOS') {
-                                            step2Heading.innerText = "2. Install Geode";
+                                            step2Heading.innerText = "2. Download Geode";
                                             step2Content.innerHTML = '<a href="https://github.com/geode-sdk/geode/releases/download/v5.8.2/geode-installer-v5.8.2-mac.pkg" class="guide-btn">Download Geode</a>';
                                             step21Container.style.display = 'none';
 
@@ -492,7 +492,7 @@
 
                                             setupSlider('Android', 'jpg');
                                         } else if (selectedOS === 'iOS') {
-                                            step2Heading.innerText = "2. Install Geode";
+                                            step2Heading.innerText = "2. Download Geode";
                                             step2Content.innerHTML = '<a href="https://github.com/geode-sdk/ios-launcher/releases/download/v1.5.4/com.geode.launcher_1.5.4.ipa" download class="guide-btn">Download Geode</a>';
                                             
                                             step21Container.style.display = 'flex';
