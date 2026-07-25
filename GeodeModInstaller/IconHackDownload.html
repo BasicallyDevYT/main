@@ -28,7 +28,7 @@
         }
         .btn-container {
             margin-top: 20px;
-            display: none;
+            display: flex;
             gap: 15px;
             justify-content: center;
         }
@@ -50,22 +50,21 @@
 <body>
 
     <h1 id="main-title">Geometry Dash Geode Mod Installer</h1>
-    <p id="main-desc">Opening the installation window...</p>
+    <p id="main-desc">Launching the installation window...</p>
 
-    <!-- Fallback buttons if popup is blocked -->
-    <div class="btn-container" id="fallback-buttons">
-        <button class="action-btn" id="request-btn">Retry / Refresh</button>
-        <button class="action-btn" id="open-btn">Open Popup</button>
+    <!-- Fallback/Refresh button container (hidden initially) -->
+    <div class="btn-container" id="fallback-buttons" style="display: none;">
+        <button class="action-btn" id="request-btn">Refresh Page</button>
     </div>
 
     <script>
         let tinyWindowRef = null;
-        let checkWindowInterval = null;
 
         function launchPopup() {
-            tinyWindowRef = window.open('', 'GeodeInstallerPopup', 'width=620,height=520,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
+            tinyWindowRef = window.open('', 'GeodeInstallerPopup', 'width=620,height=580,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
             
             if (tinyWindowRef) {
+                tinyWindowRef.document.open();
                 tinyWindowRef.document.write(`
                     <!DOCTYPE html>
                     <html lang="en">
@@ -92,24 +91,27 @@
                                 background-color: #ececec;
                                 color: #222222;
                                 margin: 0;
-                                height: 100vh;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                                align-items: center;
+                                min-height: 100vh;
                                 box-sizing: border-box;
                                 padding: 20px;
-                                overflow: hidden;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
                                 cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Normal.png'), auto;
                             }
                             .scale-wrapper {
                                 width: 520px;
-                                height: 380px;
                                 display: flex;
                                 flex-direction: column;
-                                justify-content: space-between;
                                 align-items: center;
                                 zoom: 1;
+                                margin: auto;
+                            }
+                            .center-content {
+                                width: 100%;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
                             }
                             h2 {
                                 font-size: 22px;
@@ -167,6 +169,7 @@
                                 object-fit: contain;
                                 margin-bottom: 10px;
                                 user-select: none;
+                                pointer-events: none;
                             }
                             .folder-label {
                                 font-size: 13px;
@@ -174,9 +177,10 @@
                                 font-weight: 400;
                                 user-select: none;
                                 white-space: nowrap;
+                                pointer-events: none;
                             }
                             .footer-back {
-                                margin-top: 15px;
+                                margin: 20px 0 10px 0;
                                 display: flex;
                                 flex-direction: column;
                                 align-items: center;
@@ -196,33 +200,101 @@
                                 background: #fff;
                                 color: #333;
                             }
+                            .guide-container {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 12px;
+                                width: 100%;
+                                max-width: 480px;
+                                text-align: left;
+                            }
+                            .guide-step {
+                                background: #e3e3e3;
+                                border: 1px solid #d0d0d0;
+                                border-radius: 8px;
+                                padding: 10px 14px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 6px;
+                            }
+                            .guide-title {
+                                font-size: 13px;
+                                color: #222;
+                                font-weight: 500;
+                            }
+                            .guide-btn {
+                                padding: 8px 14px;
+                                font-size: 13px;
+                                background: #0066cc;
+                                color: white;
+                                border: none;
+                                border-radius: 6px;
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Link.png'), pointer;
+                                font-weight: 500;
+                                align-self: flex-start;
+                                text-decoration: none;
+                                text-align: center;
+                            }
+                            .guide-btn:hover {
+                                background: #0055b3;
+                            }
+                            .os-select {
+                                padding: 8px 12px;
+                                font-size: 13px;
+                                border-radius: 6px;
+                                border: 1px solid #ccc;
+                                background: #fff;
+                                color: #333;
+                                cursor: pointer;
+                                width: 100%;
+                                box-sizing: border-box;
+                            }
+                            .text-input {
+                                padding: 8px 12px;
+                                font-size: 13px;
+                                border-radius: 6px;
+                                border: 1px solid #ccc;
+                                background: #fff;
+                                color: #333;
+                                width: 100%;
+                                box-sizing: border-box;
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Text.png'), text;
+                            }
+                            .error-msg {
+                                color: #d9534f;
+                                font-size: 13px;
+                                line-height: 1.4;
+                                margin: 0;
+                            }
                         </style>
                     </head>
                     <body>
 
                         <div class="scale-wrapper" id="scaler">
-                            <div>
-                                <h2>Geode Installer App</h2>
-                                <div class="subtitle">
-                                    Drag the file icon into the download folder below to trigger your .geode download.
+                            <div class="center-content" id="main-display-area">
+                                <div id="top-text-container">
+                                    <h2 id="app-title">Geode Installer App</h2>
+                                    <div class="subtitle" id="app-subtitle">
+                                        Drag the file icon into the download folder below to trigger your .geode download.
+                                    </div>
+                                </div>
+
+                                <div class="card-wrapper" id="card-area">
+                                    <div class="option-box" id="file-icon-container" draggable="true">
+                                        <img src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/WebsiteIcons/GeodeFileIcon.png" alt="File Icon" class="icon-img"/>
+                                        <div class="folder-label">basicallydev.icon-hack.geode</div>
+                                    </div>
+
+                                    <div class="option-box" id="download-folder">
+                                        <img src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/WebsiteIcons/DownloadsFolderIcon.png" alt="Folder Icon" class="icon-img"/>
+                                        <div class="folder-label">Downloads</div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="card-wrapper">
-                                <div class="option-box" id="file-icon-container" draggable="true">
-                                    <img src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/WebsiteIcons/GeodeFileIcon.png" alt="File Icon" class="icon-img"/>
-                                    <div class="folder-label">basicallydev.icon-hack.geode</div>
-                                </div>
-
-                                <div class="option-box" id="download-folder">
-                                    <img src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/WebsiteIcons/DownloadsFolderIcon.png" alt="Folder Icon" class="icon-img"/>
-                                    <div class="folder-label">Downloads</div>
-                                </div>
-                            </div>
-
-                            <div class="footer-back" onclick="window.close();">
+                            <div class="footer-back" id="footer-close" onclick="window.close();">
                                 <div class="back-circle">&#x2715;</div>
-                                <span>Close</span>
+                                <span style="font-size:12px;">Close</span>
                             </div>
                         </div>
 
@@ -230,7 +302,7 @@
                             function resizeUI() {
                                 const scaler = document.getElementById('scaler');
                                 const scaleX = window.innerWidth / 580;
-                                const scaleY = window.innerHeight / 440;
+                                const scaleY = window.innerHeight / 520;
                                 const currentScale = Math.min(scaleX, scaleY, 2.5);
                                 scaler.style.zoom = currentScale;
                             }
@@ -240,6 +312,179 @@
 
                             const fileContainer = document.getElementById('file-icon-container');
                             const downloadFolder = document.getElementById('download-folder');
+
+                            function triggerDownload() {
+                                const link = document.createElement('a');
+                                link.href = 'https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/basicallydev.icon-hack.geode';
+                                link.download = 'basicallydev.icon-hack.geode';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+
+                                document.getElementById('app-title').innerText = "Installation Guide";
+                                document.getElementById('app-subtitle').innerText = "Follow the steps below to finish installing your mod:";
+                                document.getElementById('card-area').style.display = 'none';
+
+                                const mainDisplay = document.getElementById('main-display-area');
+                                if (!document.getElementById('guide-box')) {
+                                    const guideDiv = document.createElement('div');
+                                    guideDiv.id = 'guide-box';
+                                    guideDiv.className = 'guide-container';
+                                    guideDiv.innerHTML = \`
+                                        <div class="guide-step">
+                                            <div class="guide-title">1. Select your OS</div>
+                                            <select id="os-selector" class="os-select">
+                                                <option value="" disabled selected>-- Select your OS --</option>
+                                                <option value="Windows">Windows</option>
+                                                <option value="MacOS">MacOS</option>
+                                                <option value="Linux">Linux</option>
+                                                <option value="Android">Android</option>
+                                                <option value="iOS">iOS</option>
+                                            </select>
+                                        </div>
+                                        <div id="dynamic-steps-container" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                                            <div class="guide-step" id="step-two-container">
+                                                <div class="guide-title" id="step2-heading">2. Install Geode</div>
+                                                <div id="step2-content">
+                                                    <p class="error-msg">Select your OS first.</p>
+                                                </div>
+                                            </div>
+                                            <div class="guide-step" id="step-2-1-container" style="display: none;">
+                                                <div class="guide-title" id="step21-heading">2.1. Download Geode</div>
+                                                <div id="step21-content"></div>
+                                            </div>
+                                            <div class="guide-step">
+                                                <div class="guide-title">3. Download the .geode file</div>
+                                                <a href="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/basicallydev.icon-hack.geode" download="basicallydev.icon-hack.geode" class="guide-btn">Download manually</a>
+                                            </div>
+                                            <div class="guide-step">
+                                                <div class="guide-title">4. Put the file in your mods folder</div>
+                                                <div id="step-four-content" style="margin-top: 2px;">Select an OS above to view instructions.</div>
+                                            </div>
+                                        </div>
+                                    \`;
+                                    mainDisplay.appendChild(guideDiv);
+
+                                    document.getElementById('os-selector').addEventListener('change', (event) => {
+                                        const selectedOS = event.target.value;
+                                        const stepFourContent = document.getElementById('step-four-content');
+                                        const step2Heading = document.getElementById('step2-heading');
+                                        const step2Content = document.getElementById('step2-content');
+                                        const step21Container = document.getElementById('step-2-1-container');
+                                        const step21Heading = document.getElementById('step21-heading');
+                                        const step21Content = document.getElementById('step21-content');
+                                        const dynamicStepsContainer = document.getElementById('dynamic-steps-container');
+
+                                        dynamicStepsContainer.style.display = 'flex';
+                                        const existingErr = document.getElementById('linux-error');
+                                        if (existingErr) existingErr.remove();
+
+                                        function setupSlider(imagePrefix, ext) {
+                                            stepFourContent.innerHTML = \`
+                                                <div id="image-slider-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 2px;">
+                                                    <img id="slider-img" src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/\${imagePrefix}Step1.\${ext}" alt="Step 1" style="width: 100%; max-width: 380px; height: auto; border-radius: 6px; border: 1px solid #ccc;" />
+                                                    
+                                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                                        <button id="prev-btn" class="guide-btn" style="padding: 4px 10px; font-size: 12px;">Back</button>
+                                                        <span id="page-indicator" style="font-size: 12px; color: #555;">Step 1 of 4</span>
+                                                        <button id="next-btn" class="guide-btn" style="padding: 4px 10px; font-size: 12px;">Next</button>
+                                                    </div>
+                                                </div>
+                                            \`;
+
+                                            const images = [
+                                                \`https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/\${imagePrefix}Step1.\${ext}\`,
+                                                \`https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/\${imagePrefix}Step2.\${ext}\`,
+                                                \`https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/\${imagePrefix}Step3.\${ext}\`,
+                                                \`https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/\${imagePrefix}Step4.\${ext}\`
+                                            ];
+
+                                            let currentIndex = 0;
+
+                                            const sliderImg = document.getElementById('slider-img');
+                                            const prevBtn = document.getElementById('prev-btn');
+                                            const nextBtn = document.getElementById('next-btn');
+                                            const pageIndicator = document.getElementById('page-indicator');
+
+                                            function updateSlider() {
+                                                sliderImg.src = images[currentIndex];
+                                                pageIndicator.innerText = \`Step \${currentIndex + 1} of \${images.length}\`;
+                                                prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
+                                                nextBtn.style.opacity = currentIndex === images.length - 1 ? '0.5' : '1';
+                                            }
+
+                                            prevBtn.addEventListener('click', () => {
+                                                if (currentIndex > 0) {
+                                                    currentIndex--;
+                                                    updateSlider();
+                                                }
+                                            });
+
+                                            nextBtn.addEventListener('click', () => {
+                                                if (currentIndex < images.length - 1) {
+                                                    currentIndex++;
+                                                    updateSlider();
+                                                }
+                                            });
+
+                                            updateSlider();
+                                        }
+
+                                        if (selectedOS === 'Windows') {
+                                            step2Heading.innerText = "2. Install Geode";
+                                            step2Content.innerHTML = '<a href="https://github.com/geode-sdk/geode/releases/download/v5.8.2/geode-installer-v5.8.2-win.exe" class="guide-btn">Download Geode</a>';
+                                            step21Container.style.display = 'none';
+
+                                            stepFourContent.innerHTML = '<a href="file:///C:/Program%20Files%20(x86)/Steam/steamapps/common/Geometry%20Dash/geode" class="guide-btn">Open mods folder</a>';
+                                        } else if (selectedOS === 'MacOS') {
+                                            step2Heading.innerText = "2. Install Geode";
+                                            step2Content.innerHTML = '<a href="https://github.com/geode-sdk/geode/releases/download/v5.8.2/geode-installer-v5.8.2-mac.pkg" class="guide-btn">Download Geode</a>';
+                                            step21Container.style.display = 'none';
+
+                                            stepFourContent.innerHTML = \`
+                                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                                    <input type="text" id="mac-username" class="text-input" placeholder="Enter your Mac Username" />
+                                                    <a href="#" id="mac-open-btn" class="guide-btn">Open mods folder</a>
+                                                </div>
+                                            \`;
+                                            
+                                            const usernameInput = document.getElementById('mac-username');
+                                            const openBtn = document.getElementById('mac-open-btn');
+
+                                            openBtn.addEventListener('click', (e) => {
+                                                e.preventDefault();
+                                                const username = usernameInput.value.trim() || 'TheInputedValueHere';
+                                                openBtn.href = \`file:///Users/\${username}/Library/Application%20Support/Steam/steamapps/common/Geometry%20Dash/geode/mods\`;
+                                                window.location.href = openBtn.href;
+                                            });
+                                        } else if (selectedOS === 'Linux') {
+                                            dynamicStepsContainer.style.display = 'none';
+                                            const errP = document.createElement('p');
+                                            errP.id = 'linux-error';
+                                            errP.className = 'error-msg';
+                                            errP.style.marginTop = '10px';
+                                            errP.innerText = "Geode isn't supported on Linux";
+                                            guideDiv.appendChild(errP);
+                                        } else if (selectedOS === 'Android') {
+                                            step2Heading.innerText = "2. Download Geode";
+                                            step2Content.innerHTML = '<a href="https://github.com/geode-sdk/android-launcher/releases/download/1.8.0/geode-launcher-v1.8.0.apk" download class="guide-btn">Download Geode</a>';
+                                            
+                                            step21Container.style.display = 'none';
+
+                                            setupSlider('Android', 'jpg');
+                                        } else if (selectedOS === 'iOS') {
+                                            step2Heading.innerText = "2. Install Geode";
+                                            step2Content.innerHTML = '<a href="https://github.com/geode-sdk/ios-launcher/releases/download/v1.5.4/com.geode.launcher_1.5.4.ipa" download class="guide-btn">Download Geode</a>';
+                                            
+                                            step21Container.style.display = 'flex';
+                                            step21Heading.innerText = "2.1. Install Geode";
+                                            step21Content.innerHTML = '<a href="https://github.com/geode-sdk/ios-launcher/blob/main/INSTALL.md" target="_blank" class="guide-btn">Open iOS installation guide</a>';
+
+                                            setupSlider('iOS', 'PNG');
+                                        }
+                                    });
+                                }
+                            }
 
                             fileContainer.addEventListener('dragstart', (e) => {
                                 e.dataTransfer.setData('text/plain', 'geode-file');
@@ -258,32 +503,17 @@
                                 e.preventDefault();
                                 downloadFolder.classList.remove('drag-over');
 
-                                const link = document.createElement('a');
-                                link.href = 'https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/basicallydev.icon-hack.geode';
-                                link.download = 'basicallydev.icon-hack.geode';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
+                                if (e.dataTransfer.getData('text/plain') !== 'geode-file') {
+                                    return;
+                                }
 
-                                document.body.innerHTML = "<div style='margin:auto;'><h2>Download Started!</h2><p class='subtitle'>Your .geode mod file has been dropped and is downloading successfully.</p></div>";
+                                triggerDownload();
                             });
                         <\/script>
                     </body>
                     </html>
                 `);
                 tinyWindowRef.document.close();
-
-                if (checkWindowInterval) clearInterval(checkWindowInterval);
-                checkWindowInterval = setInterval(() => {
-                    if (tinyWindowRef.closed) {
-                        clearInterval(checkWindowInterval);
-                        window.close();
-                    }
-                }, 500);
-
-                document.getElementById('main-title').innerText = "Please check the other window to continue!";
-                document.getElementById('main-desc').innerText = "The drag-and-drop installer interface is running in the popup window.";
-                document.getElementById('fallback-buttons').style.display = 'none';
                 return true;
             }
             return false;
@@ -291,19 +521,17 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             const opened = launchPopup();
-            if (!opened) {
+            if (opened) {
+                window.close();
+            } else {
                 document.getElementById('main-title').innerText = "Pop-up Blocked!";
-                document.getElementById('main-desc').innerText = "Your browser blocked the automatic popup window. Click below to retry:";
+                document.getElementById('main-desc').innerText = "Your browser blocked the automatic pop-up. Please allow popups and click refresh below:";
                 document.getElementById('fallback-buttons').style.display = 'flex';
             }
         });
 
         document.getElementById('request-btn').addEventListener('click', () => {
             location.reload();
-        });
-
-        document.getElementById('open-btn').addEventListener('click', () => {
-            launchPopup();
         });
     </script>
 
