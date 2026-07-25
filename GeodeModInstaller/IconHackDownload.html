@@ -61,7 +61,7 @@
         let tinyWindowRef = null;
 
         function launchPopup() {
-            tinyWindowRef = window.open('', 'GeodeInstallerPopup', 'width=620,height=580,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
+            tinyWindowRef = window.open('', 'GeodeInstallerPopup', 'width=620,height=620,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
             
             if (tinyWindowRef) {
                 tinyWindowRef.document.open();
@@ -179,6 +179,21 @@
                                 white-space: nowrap;
                                 pointer-events: none;
                             }
+                            .mobile-btn {
+                                margin-top: 15px;
+                                padding: 8px 16px;
+                                font-size: 13px;
+                                background: #e3e3e3;
+                                color: #0066cc;
+                                border: 1px solid #d0d0d0;
+                                border-radius: 6px;
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Link.png'), pointer;
+                                font-weight: 500;
+                                transition: background-color 0.2s;
+                            }
+                            .mobile-btn:hover {
+                                background: #dcdcdc;
+                            }
                             .footer-back {
                                 margin: 20px 0 10px 0;
                                 display: flex;
@@ -290,6 +305,8 @@
                                         <div class="folder-label">Downloads</div>
                                     </div>
                                 </div>
+
+                                <button class="mobile-btn" id="mobile-trigger-btn">On mobile?</button>
                             </div>
 
                             <div class="footer-back" id="footer-close" onclick="window.close();">
@@ -302,7 +319,7 @@
                             function resizeUI() {
                                 const scaler = document.getElementById('scaler');
                                 const scaleX = window.innerWidth / 580;
-                                const scaleY = window.innerHeight / 520;
+                                const scaleY = window.innerHeight / 560;
                                 const currentScale = Math.min(scaleX, scaleY, 2.5);
                                 scaler.style.zoom = currentScale;
                             }
@@ -312,6 +329,7 @@
 
                             const fileContainer = document.getElementById('file-icon-container');
                             const downloadFolder = document.getElementById('download-folder');
+                            const mobileTriggerBtn = document.getElementById('mobile-trigger-btn');
 
                             function triggerDownload() {
                                 const link = document.createElement('a');
@@ -324,6 +342,7 @@
                                 document.getElementById('app-title').innerText = "Installation Guide";
                                 document.getElementById('app-subtitle').innerText = "Follow the steps below to finish installing your mod:";
                                 document.getElementById('card-area').style.display = 'none';
+                                mobileTriggerBtn.style.display = 'none';
 
                                 const mainDisplay = document.getElementById('main-display-area');
                                 if (!document.getElementById('guide-box')) {
@@ -507,6 +526,10 @@
                                     return;
                                 }
 
+                                triggerDownload();
+                            });
+
+                            mobileTriggerBtn.addEventListener('click', () => {
                                 triggerDownload();
                             });
                         <\/script>
