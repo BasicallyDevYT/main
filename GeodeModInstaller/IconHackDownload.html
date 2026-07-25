@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Geode Mod Installer</title>
+    <style>
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSFonts/SF-Pro-Display-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSFonts/SF-Pro-Display-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-align: center;
+            background-color: #f6f6f6;
+            color: #333333;
+            margin: 0;
+            padding-top: 40px;
+            cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Normal.png'), auto;
+        }
+        .btn-container {
+            margin-top: 20px;
+            display: none;
+            gap: 15px;
+            justify-content: center;
+        }
+        .action-btn {
+            padding: 10px 18px;
+            font-size: 14px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Link.png'), pointer;
+            font-weight: 500;
+        }
+        .action-btn:hover {
+            background: #0055b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="main-title">Geometry Dash Geode Mod Installer</h1>
+    <p id="main-desc">Opening the installation window...</p>
+
+    <!-- Fallback buttons if popup is blocked -->
+    <div class="btn-container" id="fallback-buttons">
+        <button class="action-btn" id="request-btn">Retry / Refresh</button>
+        <button class="action-btn" id="open-btn">Open Popup</button>
+    </div>
+
+    <script>
+        let tinyWindowRef = null;
+        let checkWindowInterval = null;
+
+        function launchPopup() {
+            tinyWindowRef = window.open('', 'GeodeInstallerPopup', 'width=620,height=520,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
+            
+            if (tinyWindowRef) {
+                tinyWindowRef.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Geode Installer App</title>
+                        <style>
+                            @font-face {
+                                font-family: 'SF Pro Display';
+                                src: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSFonts/SF-Pro-Display-Regular.otf') format('opentype');
+                                font-weight: 400;
+                                font-style: normal;
+                            }
+                            @font-face {
+                                font-family: 'SF Pro Display';
+                                src: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSFonts/SF-Pro-Display-Medium.otf') format('opentype');
+                                font-weight: 500;
+                                font-style: normal;
+                            }
+
+                            body {
+                                font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                                text-align: center;
+                                background-color: #ececec;
+                                color: #222222;
+                                margin: 0;
+                                height: 100vh;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: center;
+                                box-sizing: border-box;
+                                padding: 20px;
+                                overflow: hidden;
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Normal.png'), auto;
+                            }
+                            .scale-wrapper {
+                                width: 520px;
+                                height: 380px;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: space-between;
+                                align-items: center;
+                                zoom: 1;
+                            }
+                            h2 {
+                                font-size: 22px;
+                                font-weight: 400;
+                                margin: 0 0 6px 0;
+                                color: #111;
+                                white-space: nowrap;
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Text.png'), text;
+                            }
+                            .subtitle {
+                                font-size: 13px;
+                                color: #555;
+                                width: 450px;
+                                margin: 0 0 20px 0;
+                                line-height: 1.4;
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Text.png'), text;
+                            }
+                            .card-wrapper {
+                                background-color: #e3e3e3;
+                                border: 1px solid #d0d0d0;
+                                border-radius: 8px;
+                                width: 520px;
+                                height: 220px;
+                                display: flex;
+                                justify-content: space-around;
+                                align-items: center;
+                                box-sizing: border-box;
+                                padding: 0 30px;
+                                box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+                            }
+                            .option-box {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                padding: 10px;
+                                border-radius: 8px;
+                            }
+                            #file-icon-container {
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Closehand.png'), grab;
+                            }
+                            #file-icon-container:active {
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Move.png'), grabbing;
+                            }
+                            #download-folder {
+                                transition: transform 0.2s, background-color 0.2s;
+                                border-radius: 8px;
+                            }
+                            #download-folder.drag-over {
+                                background-color: rgba(0, 102, 204, 0.15);
+                                transform: scale(1.05);
+                            }
+                            .icon-img {
+                                width: 75px;
+                                height: 75px;
+                                object-fit: contain;
+                                margin-bottom: 10px;
+                                user-select: none;
+                            }
+                            .folder-label {
+                                font-size: 13px;
+                                color: #333;
+                                font-weight: 400;
+                                user-select: none;
+                                white-space: nowrap;
+                            }
+                            .footer-back {
+                                margin-top: 15px;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                cursor: url('https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/MacOSCursors/Link.png'), pointer;
+                                color: #555;
+                                font-size: 12px;
+                            }
+                            .back-circle {
+                                width: 24px;
+                                height: 24px;
+                                border: 1px solid #aaa;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                margin-bottom: 3px;
+                                background: #fff;
+                                color: #333;
+                            }
+                        </style>
+                    </head>
+                    <body>
+
+                        <div class="scale-wrapper" id="scaler">
+                            <div>
+                                <h2>Geode Installer App</h2>
+                                <div class="subtitle">
+                                    Drag the file icon into the download folder below to trigger your .geode download.
+                                </div>
+                            </div>
+
+                            <div class="card-wrapper">
+                                <div class="option-box" id="file-icon-container" draggable="true">
+                                    <img src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/WebsiteIcons/GeodeFileIcon.png" alt="File Icon" class="icon-img"/>
+                                    <div class="folder-label">basicallydev.icon-hack.geode</div>
+                                </div>
+
+                                <div class="option-box" id="download-folder">
+                                    <img src="https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/WebsiteIcons/DownloadsFolderIcon.png" alt="Folder Icon" class="icon-img"/>
+                                    <div class="folder-label">Downloads</div>
+                                </div>
+                            </div>
+
+                            <div class="footer-back" onclick="window.close();">
+                                <div class="back-circle">&#x2715;</div>
+                                <span>Close</span>
+                            </div>
+                        </div>
+
+                        <script>
+                            function resizeUI() {
+                                const scaler = document.getElementById('scaler');
+                                const scaleX = window.innerWidth / 580;
+                                const scaleY = window.innerHeight / 440;
+                                const currentScale = Math.min(scaleX, scaleY, 2.5);
+                                scaler.style.zoom = currentScale;
+                            }
+
+                            window.addEventListener('resize', resizeUI);
+                            resizeUI();
+
+                            const fileContainer = document.getElementById('file-icon-container');
+                            const downloadFolder = document.getElementById('download-folder');
+
+                            fileContainer.addEventListener('dragstart', (e) => {
+                                e.dataTransfer.setData('text/plain', 'geode-file');
+                            });
+
+                            downloadFolder.addEventListener('dragover', (e) => {
+                                e.preventDefault();
+                                downloadFolder.classList.add('drag-over');
+                            });
+
+                            downloadFolder.addEventListener('dragleave', () => {
+                                downloadFolder.classList.remove('drag-over');
+                            });
+
+                            downloadFolder.addEventListener('drop', (e) => {
+                                e.preventDefault();
+                                downloadFolder.classList.remove('drag-over');
+
+                                const link = document.createElement('a');
+                                link.href = 'https://raw.githubusercontent.com/BasicallyDevYT/main/refs/heads/main/GeodeModInstaller/basicallydev.icon-hack.geode';
+                                link.download = 'basicallydev.icon-hack.geode';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+
+                                document.body.innerHTML = "<div style='margin:auto;'><h2>Download Started!</h2><p class='subtitle'>Your .geode mod file has been dropped and is downloading successfully.</p></div>";
+                            });
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                tinyWindowRef.document.close();
+
+                if (checkWindowInterval) clearInterval(checkWindowInterval);
+                checkWindowInterval = setInterval(() => {
+                    if (tinyWindowRef.closed) {
+                        clearInterval(checkWindowInterval);
+                        window.close();
+                    }
+                }, 500);
+
+                document.getElementById('main-title').innerText = "Please check the other window to continue!";
+                document.getElementById('main-desc').innerText = "The drag-and-drop installer interface is running in the popup window.";
+                document.getElementById('fallback-buttons').style.display = 'none';
+                return true;
+            }
+            return false;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const opened = launchPopup();
+            if (!opened) {
+                document.getElementById('main-title').innerText = "Pop-up Blocked!";
+                document.getElementById('main-desc').innerText = "Your browser blocked the automatic popup window. Click below to retry:";
+                document.getElementById('fallback-buttons').style.display = 'flex';
+            }
+        });
+
+        document.getElementById('request-btn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        document.getElementById('open-btn').addEventListener('click', () => {
+            launchPopup();
+        });
+    </script>
+
+</body>
+</html>
