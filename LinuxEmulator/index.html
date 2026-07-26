@@ -44,7 +44,7 @@
 </head>
 <body>
 
-    <h2>Linux - Void Edition</h2>
+    <h2>Void Linux Emulator</h2>
     <div class="control-container" id="control_area">
         <div style="margin-bottom: 10px;">
             <button onclick="startLinux('base')" style="background-color: #333; border: 1px solid #555;">Start Base (CLI)</button>
@@ -80,7 +80,7 @@
                 : 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-base.iso';
 
             try {
-                statusDisplay.innerText = "Connecting to Hugging Face and starting network download... (0.0%)";
+                statusDisplay.innerText = "Connecting to Hugging Face and starting network download... (0%)";
 
                 const response = await fetch(isoUrl);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -99,15 +99,14 @@
                     loaded += value.length;
                     
                     if (total > 0) {
-                        const percent = ((loaded / total) * 100).toFixed(1);
+                        const percent = Math.round((loaded / total) * 100);
                         statusDisplay.innerText = `Downloading ISO data streams over network... (${percent}%)`;
                     } else {
-                        statusDisplay.innerText = `Downloading ISO data streams over network... (${(loaded / 1024 / 1024).toFixed(1)} MB loaded)`;
+                        statusDisplay.innerText = `Downloading ISO data streams over network... (${Math.round(loaded / 1024 / 1024)} MB loaded)`;
                     }
                 }
 
                 statusDisplay.innerText = "Combining network chunks into a single binary Blob...";
-                // Small yield to let browser paint UI update
                 await new Promise(r => setTimeout(r, 20));
                 const blob = new Blob(chunks);
 
