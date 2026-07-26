@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Void Linux v86 Emulator</title>
+    <title>Void Linux School Emulator</title>
     <style>
         body {
             background-color: #121212;
@@ -35,9 +35,7 @@
             border: 2px solid #333;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        canvas {
-            display: block;
-        }
+        canvas { display: block; }
         #loading {
             margin-top: 10px;
             font-style: italic;
@@ -47,7 +45,7 @@
 </head>
 <body>
 
-    <h2>Choose Your Linux Environment</h2>
+    <h2>Void Linux - School Edition</h2>
     <div class="button-container">
         <button onclick="startLinux('base')">Start Base (CLI)</button>
         <button onclick="startLinux('xfce')">Start XFCE (GUI)</button>
@@ -59,12 +57,11 @@
         <div id="screen"></div>
     </div>
 
-    <!-- Include libv86 script -->
     <script src="libv86.js"></script>
     <script>
         let currentEmulator = null;
 
-        async function downloadAndRun(url, memorySize, isCdrom) {
+        async function startLinux(version) {
             if (currentEmulator) {
                 currentEmulator.stop();
                 currentEmulator = null;
@@ -72,52 +69,45 @@
 
             document.getElementById("screen").innerHTML = "";
             const loadingDiv = document.getElementById("loading");
-            loadingDiv.innerText = "Downloading OS image... Please wait.";
+            loadingDiv.innerText = "Downloading ISO from Hugging Face...";
+
+            const isoUrl = (version === 'xfce') 
+                ? 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-xfce.iso' 
+                : 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-base.iso';
 
             try {
-                // Fetch the ISO directly as an ArrayBuffer to bypass browser CORS redirection blocks on the raw fetch
-                const response = await fetch(url);
+                // Fetching the private ISO using your token in the headers
+                const response = await fetch(isoUrl, {
+                    headers: {
+                        "Authorization": "Bearer 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"
+                    }
+                });
+
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                loadingDiv.innerText = "Processing ISO into memory...";
                 const blob = await response.blob();
                 const buffer = await blob.arrayBuffer();
 
                 loadingDiv.innerText = "Booting emulator...";
 
-                const config = {
+                currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
+                    cdrom: { buffer: buffer },
                     autostart: true,
-                    memory: memorySize,
+                    memory: version === 'xfce' ? 512 * 1024 * 1024 : 256 * 1024 * 1024,
                     vga_memory: 16 * 1024 * 1024,
-                    network_relay_url: "wss://relay.widget.v86.wasm.in/"
-                };
+                    network_relay_url: "wss://relay.widget.v86.wasm.in/",
+                    boot_order: 0x3
+                });
 
-                // Pass buffer into cdrom or hda depending on media type
-                if (isCdrom) {
-                    config.cdrom = { buffer: buffer };
-                    config.boot_order = 0x3;
-                } else {
-                    config.hda = { buffer: buffer };
-                }
-
-                currentEmulator = new V86(config);
                 loadingDiv.innerText = "";
             } catch (err) {
                 console.error(err);
-                loadingDiv.innerText = "Failed to download image: " + err.message;
+                loadingDiv.innerText = "Error loading ISO: " + err.message;
             }
-        }
-
-        function startLinux(version) {
-            const isXfce = (version === 'xfce');
-            const url = isXfce 
-                ? 'https://github.com/BasicallyDevYT/main/releases/download/Void/void-live-i686-20250202-xfce.iso' 
-                : 'https://github.com/BasicallyDevYT/main/releases/download/Void/void-live-i686-20250202-base.iso';
-            
-            const memory = isXfce ? 512 * 1024 * 1024 : 256 * 1024 * 1024;
-
-            downloadAndRun(url, memory, true);
         }
     </script>
 </body>
