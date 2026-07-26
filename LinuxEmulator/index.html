@@ -80,48 +80,24 @@
                 : 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-base.iso';
 
             try {
-                statusDisplay.innerText = "Connecting to Hugging Face and starting network download... (0.00%)";
+                statusDisplay.innerText = "Checking ISO file size...";
 
-                const response = await fetch(isoUrl);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                
-                const contentLength = response.headers.get('content-length');
+                const headResponse = await fetch(isoUrl, { method: 'HEAD' });
+                const contentLength = headResponse.headers.get('content-length');
                 const total = contentLength ? parseInt(contentLength, 10) : 0;
-                let loaded = 0;
 
-                const reader = response.body.getReader();
-                const chunks = [];
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    loaded += value.length;
-                    
-                    if (total > 0) {
-                        const percent = ((loaded / total) * 100).toFixed(2);
-                        statusDisplay.innerText = `Downloading ISO data streams over network... (${percent}%)`;
-                    } else {
-                        statusDisplay.innerText = `Downloading ISO data streams over network... (${(loaded / 1024 / 1024).toFixed(2)} MB loaded)`;
-                    }
-                }
-
-                statusDisplay.innerText = "Combining network chunks into a single binary Blob...";
-                await new Promise(r => setTimeout(r, 20));
-                const blob = new Blob(chunks);
-
-                statusDisplay.innerText = "Converting Blob into raw ArrayBuffer for memory mapping...";
-                await new Promise(r => setTimeout(r, 20));
-                const buffer = await blob.arrayBuffer();
-
-                statusDisplay.innerText = "Allocating virtual machine RAM and loading ISO into virtual CD-ROM memory...";
+                statusDisplay.innerText = "Initializing asynchronous CD-ROM streaming...";
                 await new Promise(r => setTimeout(r, 20));
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
-                    cdrom: { buffer: buffer },
+                    cdrom: { 
+                        url: isoUrl, 
+                        async: true, 
+                        size: total 
+                    },
                     autostart: true,
                     memory: version === 'xfce' ? 512 * 1024 * 1024 : 256 * 1024 * 1024,
                     vga_memory: 16 * 1024 * 1024,
