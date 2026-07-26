@@ -16,18 +16,17 @@
             margin: 0;
         }
         h2 { margin-bottom: 10px; }
-        .button-container { margin-bottom: 20px; }
+        .control-container { margin-bottom: 20px; text-align: center; }
         button {
-            background-color: #333;
+            background-color: #d9534f;
             color: #fff;
-            border: 1px solid #555;
+            border: 1px solid #d43f3a;
             padding: 10px 20px;
-            margin: 0 5px;
             cursor: pointer;
             font-size: 16px;
             border-radius: 4px;
         }
-        button:hover { background-color: #444; }
+        button:hover { background-color: #c9302c; }
         #screen_container {
             width: 800px;
             height: 600px;
@@ -36,9 +35,9 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         canvas { display: block; }
-        #loading {
+        #status-display {
             margin-top: 10px;
-            font-style: italic;
+            font-size: 16px;
             color: #aaa;
         }
     </style>
@@ -46,12 +45,14 @@
 <body>
 
     <h2>Void Linux - School Edition</h2>
-    <div class="button-container">
-        <button onclick="startLinux('base')">Start Base (CLI)</button>
-        <button onclick="startLinux('xfce')">Start XFCE (GUI)</button>
+    <div class="control-container" id="control_area">
+        <div style="margin-bottom: 10px;">
+            <button onclick="startLinux('base')">Start Base (CLI)</button>
+            <button onclick="startLinux('xfce')">Start XFCE (GUI)</button>
+        </div>
     </div>
 
-    <div id="loading"></div>
+    <div id="status-display">Select a version to begin.</div>
 
     <div id="screen_container">
         <div id="screen"></div>
@@ -62,30 +63,55 @@
         let currentEmulator = null;
 
         async function startLinux(version) {
-            if (currentEmulator) {
-                currentEmulator.stop();
-                currentEmulator = null;
-            }
-
-            document.getElementById("screen").innerHTML = "";
-            const loadingDiv = document.getElementById("loading");
-            loadingDiv.innerText = "Downloading ISO from Hugging Face...";
+            const controlArea = document.getElementById("control_area");
+            const statusDisplay = document.getElementById("status-display");
+            
+            const versionName = version === 'xfce' ? 'XFCE (GUI)' : 'Base (CLI)';
+            
+            // Replace buttons with selection text and a stop button
+            controlArea.innerHTML = `
+                <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
+                    Selected: Void Linux ${versionName}
+                </div>
+                <button onclick="location.reload()">Stop / Reset</button>
+            `;
 
             const isoUrl = (version === 'xfce') 
                 ? 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-xfce.iso' 
                 : 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-base.iso';
 
             try {
-                // Public fetch without any auth headers needed
-                const response = await fetch(isoUrl);
+                statusDisplay.innerText = "Downloading ISO from Hugging Face... (0%)";
 
+                const response = await fetch(isoUrl);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
-                loadingDiv.innerText = "Processing ISO into memory...";
-                const blob = await response.blob();
+                const contentLength = response.headers.get('content-length');
+                const total = contentLength ? parseInt(contentLength, 10) : 0;
+                let loaded = 0;
+
+                const reader = response.body.getReader();
+                const chunks = [];
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    loaded += value.length;
+                    
+                    if (total > 0) {
+                        const percent = Math.round((loaded / total) * 100);
+                        statusDisplay.innerText = `Downloading ISO from Hugging Face... (${percent}%)`;
+                    } else {
+                        statusDisplay.innerText = `Downloading ISO from Hugging Face... (${Math.round(loaded / 1024 / 1024)} MB loaded)`;
+                    }
+                }
+
+                statusDisplay.innerText = "Processing ISO into memory...";
+                const blob = new Blob(chunks);
                 const buffer = await blob.arrayBuffer();
 
-                loadingDiv.innerText = "Booting emulator...";
+                statusDisplay.innerText = "Booting emulator...";
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
@@ -99,10 +125,10 @@
                     boot_order: 0x3
                 });
 
-                loadingDiv.innerText = "";
+                statusDisplay.innerText = "Running";
             } catch (err) {
                 console.error(err);
-                loadingDiv.innerText = "Error loading ISO: " + err.message;
+                statusDisplay.innerText = "Error loading ISO: " + err.message;
             }
         }
     </script>
