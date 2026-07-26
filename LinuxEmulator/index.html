@@ -76,12 +76,8 @@
                 : 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-base.iso';
 
             try {
-                // Fetching the private ISO using your token in the headers
-                const response = await fetch(isoUrl, {
-                    headers: {
-                        "Authorization": "Bearer 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"
-                    }
-                });
+                // Public fetch without any auth headers needed
+                const response = await fetch(isoUrl);
 
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
