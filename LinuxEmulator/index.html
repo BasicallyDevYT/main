@@ -38,6 +38,11 @@
         canvas {
             display: block;
         }
+        #loading {
+            margin-top: 10px;
+            font-style: italic;
+            color: #aaa;
+        }
     </style>
 </head>
 <body>
@@ -48,6 +53,8 @@
         <button onclick="startLinux('xfce')">Start XFCE (GUI)</button>
     </div>
 
+    <div id="loading"></div>
+
     <div id="screen_container">
         <div id="screen"></div>
     </div>
@@ -57,32 +64,60 @@
     <script>
         let currentEmulator = null;
 
-        function startLinux(version) {
-            // Stop any currently running instance to prevent conflicts
+        async function downloadAndRun(url, memorySize, isCdrom) {
             if (currentEmulator) {
                 currentEmulator.stop();
                 currentEmulator = null;
             }
 
-            // Clear out the screen container completely
             document.getElementById("screen").innerHTML = "";
+            const loadingDiv = document.getElementById("loading");
+            loadingDiv.innerText = "Downloading OS image... Please wait.";
 
-            // Use the verified GitHub Release direct download URLs
-            var imageFile = (version === 'xfce') 
+            try {
+                // Fetch the ISO directly as an ArrayBuffer to bypass browser CORS redirection blocks on the raw fetch
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const blob = await response.blob();
+                const buffer = await blob.arrayBuffer();
+
+                loadingDiv.innerText = "Booting emulator...";
+
+                const config = {
+                    screen_container: document.getElementById("screen_container"),
+                    bios: { url: "bios/seabios.bin" },
+                    vga_bios: { url: "bios/vgabios.bin" },
+                    autostart: true,
+                    memory: memorySize,
+                    vga_memory: 16 * 1024 * 1024,
+                    network_relay_url: "wss://relay.widget.v86.wasm.in/"
+                };
+
+                // Pass buffer into cdrom or hda depending on media type
+                if (isCdrom) {
+                    config.cdrom = { buffer: buffer };
+                    config.boot_order = 0x3;
+                } else {
+                    config.hda = { buffer: buffer };
+                }
+
+                currentEmulator = new V86(config);
+                loadingDiv.innerText = "";
+            } catch (err) {
+                console.error(err);
+                loadingDiv.innerText = "Failed to download image: " + err.message;
+            }
+        }
+
+        function startLinux(version) {
+            const isXfce = (version === 'xfce');
+            const url = isXfce 
                 ? 'https://github.com/BasicallyDevYT/main/releases/download/Void/void-live-i686-20250202-xfce.iso' 
                 : 'https://github.com/BasicallyDevYT/main/releases/download/Void/void-live-i686-20250202-base.iso';
+            
+            const memory = isXfce ? 512 * 1024 * 1024 : 256 * 1024 * 1024;
 
-            currentEmulator = new V86({
-                screen_container: document.getElementById("screen_container"),
-                bios: { url: "bios/seabios.bin" },
-                vga_bios: { url: "bios/vgabios.bin" },
-                cdrom: { url: imageFile },
-                autostart: true,
-                memory: version === 'xfce' ? 512 * 1024 * 1024 : 256 * 1024 * 1024,
-                vga_memory: 16 * 1024 * 1024,
-                network_relay_url: "wss://relay.widget.v86.wasm.in/",
-                boot_order: 0x3 // Boot from CD-ROM first
-            });
+            downloadAndRun(url, memory, true);
         }
     </script>
 </body>
