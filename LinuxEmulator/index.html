@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Void Linux v86 Emulator</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h2 { margin-bottom: 10px; }
+        .button-container { margin-bottom: 20px; }
+        button {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+        button:hover { background-color: #444; }
+        #screen_container {
+            width: 800px;
+            height: 600px;
+            background-color: #000;
+            border: 2px solid #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Choose Your Linux Environment</h2>
+    <div class="button-container">
+        <button onclick="startLinux('base')">Start Base (CLI)</button>
+        <button onclick="startLinux('xfce')">Start XFCE (GUI)</button>
+    </div>
+
+    <div id="screen_container">
+        <div id="screen"></div>
+    </div>
+
+    <!-- Include libv86 script -->
+    <script src="libv86.js"></script>
+    <script>
+        let currentEmulator = null;
+
+        function startLinux(version) {
+            // Stop any currently running instance to prevent conflicts
+            if (currentEmulator) {
+                currentEmulator.stop();
+                currentEmulator = null;
+            }
+
+            // Clear out the screen container completely
+            document.getElementById("screen").innerHTML = "";
+
+            // Use the verified GitHub Release direct download URLs
+            var imageFile = (version === 'xfce') 
+                ? 'https://github.com/BasicallyDevYT/main/releases/download/Void/void-live-i686-20250202-xfce.iso' 
+                : 'https://github.com/BasicallyDevYT/main/releases/download/Void/void-live-i686-20250202-base.iso';
+
+            currentEmulator = new V86({
+                screen_container: document.getElementById("screen_container"),
+                bios: { url: "bios/seabios.bin" },
+                vga_bios: { url: "bios/vgabios.bin" },
+                cdrom: { url: imageFile },
+                autostart: true,
+                memory: version === 'xfce' ? 512 * 1024 * 1024 : 256 * 1024 * 1024,
+                vga_memory: 16 * 1024 * 1024,
+                network_relay_url: "wss://relay.widget.v86.wasm.in/",
+                boot_order: 0x3 // Boot from CD-ROM first
+            });
+        }
+    </script>
+</body>
+</html>
