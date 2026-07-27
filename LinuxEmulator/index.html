@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Void Linux Emulator</title>
+    <title>Linux GUI Emulator</title>
     <style>
         body {
             background-color: #121212;
@@ -44,15 +44,14 @@
 </head>
 <body>
 
-    <h2>Void Linux Emulator</h2>
+    <h2>Linux GUI Emulator</h2>
     <div class="control-container" id="control_area">
         <div style="margin-bottom: 10px;">
-            <button onclick="startLinux('base')" style="background-color: #333; border: 1px solid #555;">Start Base (CLI)</button>
-            <button onclick="startLinux('xfce')" style="background-color: #333; border: 1px solid #555;">Start XFCE (GUI)</button>
+            <button onclick="startLinuxGUI()" style="background-color: #333; border: 1px solid #555;">Start Linux with GUI</button>
         </div>
     </div>
 
-    <div id="status-display">Select a version to begin.</div>
+    <div id="status-display">Click to start the lightweight Linux GUI desktop.</div>
 
     <div id="screen_container">
         <div id="screen"></div>
@@ -62,31 +61,27 @@
     <script>
         let currentEmulator = null;
 
-        async function startLinux(version) {
+        async function startLinuxGUI() {
             const controlArea = document.getElementById("control_area");
             const statusDisplay = document.getElementById("status-display");
             
-            const versionName = version === 'xfce' ? 'XFCE (GUI)' : 'Base (CLI)';
-            
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Void Linux ${versionName}
+                    Selected: Tiny Core Linux (FLWM Desktop GUI)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
-            const isoUrl = (version === 'xfce') 
-                ? 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-xfce.iso' 
-                : 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/void-live-i686-20250202-base.iso';
+            const isoUrl = 'https://distro.ibiblio.org/tinycorelinux/15.x/x86/release/TinyCore-15.0.iso';
 
             try {
-                statusDisplay.innerText = "Checking ISO file size...";
+                statusDisplay.innerText = "Checking GUI image size...";
 
-                const headResponse = await fetch(isoUrl, { method: 'HEAD' });
-                const contentLength = headResponse.headers.get('content-length');
-                const total = contentLength ? parseInt(contentLength, 10) : 0;
+                const headResponse = await fetch(isoUrl, { method: 'HEAD', mode: 'cors' }).catch(() => null);
+                const contentLength = headResponse ? headResponse.headers.get('content-length') : null;
+                const total = contentLength ? parseInt(contentLength, 10) : 23 * 1024 * 1024;
 
-                statusDisplay.innerText = "Initializing asynchronous CD-ROM streaming...";
+                statusDisplay.innerText = "Loading lightweight GUI desktop stream...";
                 await new Promise(r => setTimeout(r, 20));
 
                 currentEmulator = new V86({
@@ -99,16 +94,16 @@
                         size: total 
                     },
                     autostart: true,
-                    memory: version === 'xfce' ? 512 * 1024 * 1024 : 256 * 1024 * 1024,
+                    memory: 128 * 1024 * 1024,
                     vga_memory: 16 * 1024 * 1024,
                     network_relay_url: "wss://relay.widget.v86.wasm.in/",
                     boot_order: 0x3
                 });
 
-                statusDisplay.innerText = "Running";
+                statusDisplay.innerText = "Running Linux GUI";
             } catch (err) {
                 console.error(err);
-                statusDisplay.innerText = "Error loading ISO: " + err.message;
+                statusDisplay.innerText = "Error loading GUI: " + err.message;
             }
         }
     </script>
