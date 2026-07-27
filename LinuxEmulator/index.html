@@ -67,7 +67,7 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (Custom Bootargs)
+                    Selected: Tiny Core Linux GUI (Floppy Boot Fix)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
@@ -81,21 +81,20 @@
                 if (!response.ok) throw new Error("Failed to fetch ISO file (HTTP " + response.status + ")");
                 const isoArrayBuffer = await response.arrayBuffer();
 
-                statusDisplay.innerText = "Booting Tiny Core with cdrom root arguments...";
+                statusDisplay.innerText = "Booting Tiny Core via floppy mapping...";
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
-                    cdrom: { 
+                    floppy: { 
                         buffer: isoArrayBuffer 
                     },
-                    cmdline: "cde root=/dev/sr0 tz=UTC",
                     autostart: true,
                     memory: 128 * 1024 * 1024,
                     vga_memory: 16 * 1024 * 1024,
                     network_relay_url: "wss://relay.widget.v86.wasm.in/",
-                    boot_order: 0x2
+                    boot_order: 0x123
                 });
 
                 statusDisplay.innerText = "Running GUI";
