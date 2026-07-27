@@ -67,34 +67,35 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (Direct Kernel Boot)
+                    Selected: Tiny Core Linux GUI (Sync ISO Load)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
+            const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
+
             try {
-                statusDisplay.innerText = "Booting Tiny Core directly via kernel and initrd...";
-                await new Promise(r => setTimeout(r, 20));
+                statusDisplay.innerText = "Downloading full ISO synchronously...";
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
-                    multiboot: {
-                        url: "https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/vmlinuz",
-                        cmdline: "quiet",
-                        initrd: "https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/core.gz"
+                    cdrom: { 
+                        url: isoUrl, 
+                        async: false 
                     },
                     autostart: true,
                     memory: 128 * 1024 * 1024,
                     vga_memory: 16 * 1024 * 1024,
-                    network_relay_url: "wss://relay.widget.v86.wasm.in/"
+                    network_relay_url: "wss://relay.widget.v86.wasm.in/",
+                    boot_order: 0x3
                 });
 
                 statusDisplay.innerText = "Running GUI";
             } catch (err) {
                 console.error(err);
-                statusDisplay.innerText = "Error loading files: " + err.message;
+                statusDisplay.innerText = "Error loading ISO: " + err.message;
             }
         }
     </script>
