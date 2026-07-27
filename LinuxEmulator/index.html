@@ -67,7 +67,7 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (512MB RAM + 1GB Hard Drive)
+                    Selected: Tiny Core Linux GUI (High-Performance Multi-Core Config)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
@@ -81,7 +81,7 @@
                 if (!response.ok) throw new Error("Failed to fetch ISO file (HTTP " + response.status + ")");
                 const isoArrayBuffer = await response.arrayBuffer();
 
-                statusDisplay.innerText = "Booting with 512MB RAM, 128MB VGA, and 1GB virtual hard drive...";
+                statusDisplay.innerText = "Booting with multi-core processor, 512MB RAM, 128MB VGA, and 1GB hard drive...";
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
@@ -91,13 +91,14 @@
                         buffer: isoArrayBuffer 
                     },
                     hda: {
-                        // 1GB virtual hard drive buffer for temp files and storage
                         buffer: new ArrayBuffer(1024 * 1024 * 1024)
                     },
                     wasm_path: "build/v86.wasm",
                     autostart: true,
                     memory: 512 * 1024 * 1024,
-                    vga_memory: 128 * 1024 * 1024
+                    vga_memory: 128 * 1024 * 1024,
+                    cpus: 4,
+                    acpi: true
                 });
 
                 statusDisplay.innerText = "Running GUI";
