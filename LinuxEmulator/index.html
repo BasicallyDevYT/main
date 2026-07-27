@@ -61,47 +61,34 @@
     <script>
         let currentEmulator = null;
 
-        async function startTinyCore() {
+        function startTinyCore() {
             const controlArea = document.getElementById("control_area");
             const statusDisplay = document.getElementById("status-display");
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (Floppy Boot Fix)
+                    Selected: Tiny Core Linux GUI (Direct ISO URL Load)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
-            const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
+            statusDisplay.innerText = "Booting Tiny Core directly from ISO URL...";
 
-            try {
-                statusDisplay.innerText = "Downloading ISO into memory buffer...";
-                
-                const response = await fetch(isoUrl);
-                if (!response.ok) throw new Error("Failed to fetch ISO file (HTTP " + response.status + ")");
-                const isoArrayBuffer = await response.arrayBuffer();
+            currentEmulator = new V86({
+                screen_container: document.getElementById("screen_container"),
+                bios: { url: "bios/seabios.bin" },
+                vga_bios: { url: "bios/vgabios.bin" },
+                cdrom: { 
+                    url: 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso'
+                },
+                autostart: true,
+                memory: 128 * 1024 * 1024,
+                vga_memory: 16 * 1024 * 1024,
+                network_relay_url: "wss://relay.widget.v86.wasm.in/",
+                boot_order: 0x2
+            });
 
-                statusDisplay.innerText = "Booting Tiny Core via floppy mapping...";
-
-                currentEmulator = new V86({
-                    screen_container: document.getElementById("screen_container"),
-                    bios: { url: "bios/seabios.bin" },
-                    vga_bios: { url: "bios/vgabios.bin" },
-                    floppy: { 
-                        buffer: isoArrayBuffer 
-                    },
-                    autostart: true,
-                    memory: 128 * 1024 * 1024,
-                    vga_memory: 16 * 1024 * 1024,
-                    network_relay_url: "wss://relay.widget.v86.wasm.in/",
-                    boot_order: 0x123
-                });
-
-                statusDisplay.innerText = "Running GUI";
-            } catch (err) {
-                console.error(err);
-                statusDisplay.innerText = "Error loading ISO: " + err.message;
-            }
+            statusDisplay.innerText = "Running GUI";
         }
     </script>
 </body>
