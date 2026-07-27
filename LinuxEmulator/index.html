@@ -67,7 +67,7 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (Sync ISO Load)
+                    Selected: Tiny Core Linux GUI (ISO Buffer Boot)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
@@ -75,21 +75,26 @@
             const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
 
             try {
-                statusDisplay.innerText = "Downloading full ISO synchronously...";
+                statusDisplay.innerText = "Downloading ISO into memory buffer...";
+                
+                const response = await fetch(isoUrl);
+                if (!response.ok) throw new Error("Failed to fetch ISO file (HTTP " + response.status + ")");
+                const isoArrayBuffer = await response.arrayBuffer();
+
+                statusDisplay.innerText = "Booting Tiny Core ISO...";
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
                     cdrom: { 
-                        url: isoUrl, 
-                        async: false 
+                        buffer: isoArrayBuffer 
                     },
                     autostart: true,
                     memory: 128 * 1024 * 1024,
                     vga_memory: 16 * 1024 * 1024,
                     network_relay_url: "wss://relay.widget.v86.wasm.in/",
-                    boot_order: 0x3
+                    boot_order: 0x2
                 });
 
                 statusDisplay.innerText = "Running GUI";
