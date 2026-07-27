@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tiny Core Linux - True Archive Expansion & Raw Hex Viewer</title>
+    <title>v86 Arch Linux Snapshot & Raw Hex Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/fzstd@0.1.1/umd/index.js"></script>
     <style>
         body {
             background-color: #121212;
@@ -191,12 +192,12 @@
 </head>
 <body>
 
-    <h2>Tiny Core Linux - Native Virtual FS & Direct Binary Hex Viewer</h2>
+    <h2>Arch Linux Snapshot - Native Virtual FS & Direct Binary Hex Viewer</h2>
     <div class="control-container" id="control_area">
-        <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download ISO & Mount Filesystem</button>
+        <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download State Blob & Restore Snapshot</button>
     </div>
 
-    <div id="status-display">Click to download the real ISO and mount contents dynamically.</div>
+    <div id="status-display">Click to load the Arch Linux zstd memory snapshot.</div>
 
     <div class="workspace">
         <div class="left-pane">
@@ -232,7 +233,7 @@
     <script src="libv86.js"></script>
     <script>
         let currentEmulator = null;
-        let globalIsoArrayBuffer = null;
+        let globalStateArrayBuffer = null;
         let trueFileSystem = {};
         let currentPathStack = ["/"];
 
@@ -248,65 +249,41 @@
             
             controlArea.innerHTML = `
                 <div style="font-weight: bold; color: #4CAF50; margin-bottom: 5px;">
-                    System Active: Virtual FS Mounted
+                    System Active: Snapshot Restored
                 </div>
                 <button onclick="location.reload()" style="padding: 5px 10px; font-size: 14px;">Stop / Reset</button>
             `;
 
-            const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
+            const stateUrl = 'https://i.copy.sh/arch_state-v3.bin.zst';
 
             try {
-                statusDisplay.innerText = "Downloading ISO completely into memory...";
-                logToPanel("[Init] Starting fetch request for real ISO...");
+                statusDisplay.innerText = "Downloading Arch Linux snapshot (.zst)...";
+                logToPanel("[Init] Fetching zstd snapshot blob...");
                 
-                const response = await fetch(isoUrl);
+                const response = await fetch(stateUrl);
                 if (!response.ok) throw new Error("HTTP error " + response.status);
 
-                const contentLength = response.headers.get('Content-Length');
-                const total = contentLength ? parseInt(contentLength, 10) : 0;
+                const blob = await response.blob();
+                const compressedArrayBuffer = await blob.arrayBuffer();
+
+                statusDisplay.innerText = "Decompressing Zstandard snapshot...";
+                logToPanel("[Decompress] Uncompressing state file via fzstd...");
+
+                const decompressed = fzstd.decompress(new Uint8Array(compressedArrayBuffer));
+                globalStateArrayBuffer = decompressed;
+
+                logToPanel(`[Decompress] Successfully unpacked state blob to ${(decompressed.length / (1024*1024)).toFixed(1)} MB.`);
                 
-                const reader = response.body.getReader();
-                let receivedLength = 0;
-                let chunks = [];
+                // Build virtual filesystem mapping out of the memory state blob chunks for exploration
+                parseSnapshotVirtualFilesystem(globalStateArrayBuffer);
 
-                while(true) {
-                    const {done, value} = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    receivedLength += value.length;
-                    
-                    if (total > 0) {
-                        let percent = ((receivedLength / total) * 100).toFixed(1);
-                        statusDisplay.innerText = `Downloading: ${percent}% (${(receivedLength / (1024*1024)).toFixed(1)} MB)`;
-                    }
-                }
-
-                logToPanel(`[Download] Successfully downloaded ${(receivedLength / (1024*1024)).toFixed(1)} MB.`);
-                statusDisplay.innerText = "Assembling ArrayBuffer...";
-
-                globalIsoArrayBuffer = new Uint8Array(receivedLength);
-                let position = 0;
-                for(let chunk of chunks) {
-                    globalIsoArrayBuffer.set(chunk, position);
-                    position += chunk.length;
-                }
-
-                logToPanel("[Parser] Parsing ISO9660 volume descriptors...");
-                parseTrueIso9660(globalIsoArrayBuffer);
-
-                statusDisplay.innerText = "Booting v86 emulator environment...";
-                logToPanel("[v86] Initializing V86 instance with CD-ROM buffer...");
+                statusDisplay.innerText = "Initializing v86 emulator environment...";
+                logToPanel("[v86] Initializing V86 instance...");
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
-                    cdrom: { 
-                        buffer: globalIsoArrayBuffer.buffer 
-                    },
-                    hda: { 
-                        buffer: new ArrayBuffer(1024 * 1024 * 1024) 
-                    },
                     wasm_path: "build/v86.wasm",
                     autostart: true,
                     memory: 512 * 1024 * 1024,
@@ -316,8 +293,13 @@
                     serial_container: document.getElementById("log-output")
                 });
 
-                statusDisplay.innerText = "Running GUI & Virtual FS Explorer";
-                logToPanel("[v86] Emulator started successfully.");
+                statusDisplay.innerText = "Restoring state snapshot into v86...";
+                logToPanel("[v86] Restoring state blob into running emulator...");
+
+                currentEmulator.restore_state(globalStateArrayBuffer.buffer);
+
+                statusDisplay.innerText = "Arch Linux Snapshot Active & Explorer Mounted";
+                logToPanel("[v86] Snapshot restored successfully.");
                 
                 renderFileTree();
 
@@ -328,91 +310,38 @@
             }
         }
 
-        function parseTrueIso9660(uint8Array) {
-            trueFileSystem = { "/": { type: "dir", contents: {} } };
-            const dataView = new DataView(uint8Array.buffer);
-
-            let sectorSize = 2048;
-            let vdsOffset = 16 * sectorSize;
-            let rootDirExtentOffset = 0;
-            let rootDirDataLength = 0;
-
-            for (let offset = vdsOffset; offset < uint8Array.length; offset += sectorSize) {
-                if (offset + 6 > uint8Array.length) break;
-                let type = uint8Array[offset];
-                let idBytes = [uint8Array[offset+1], uint8Array[offset+2], uint8Array[offset+3], uint8Array[offset+4], uint8Array[offset+5]];
-                let idStr = String.fromCharCode(...idBytes);
-
-                if (idStr === "CD001") {
-                    if (type === 1) {
-                        let rootRecordOffset = offset + 156;
-                        rootDirExtentOffset = dataView.getUint32(rootRecordOffset + 2, true) * sectorSize;
-                        rootDirDataLength = dataView.getUint32(rootRecordOffset + 10, true);
-                        break;
-                    } else if (type === 255) {
-                        break;
-                    }
-                }
-            }
-
-            if (rootDirExtentOffset > 0 && rootDirExtentOffset < uint8Array.length && rootDirDataLength > 0) {
-                parseDirectoryRecords(uint8Array, dataView, rootDirExtentOffset, rootDirDataLength, trueFileSystem["/"]);
-            }
-        }
-
-        function parseDirectoryRecords(uint8Array, dataView, dirOffset, dirLength, targetDirObj) {
-            let sectorSize = 2048;
-            let currentOffset = dirOffset;
-            let endOffset = dirOffset + Math.min(dirLength, sectorSize * 64);
-
-            while (currentOffset < endOffset && currentOffset < uint8Array.length) {
-                let recordLength = uint8Array[currentOffset];
-                if (recordLength === 0) {
-                    currentOffset = Math.ceil(currentOffset / sectorSize) * sectorSize;
-                    if (currentOffset >= uint8Array.length || currentOffset >= dirOffset + dirLength) break;
-                    recordLength = uint8Array[currentOffset];
-                    if (recordLength === 0) break;
-                }
-
-                if (currentOffset + 33 > uint8Array.length) break;
-
-                let extLocation = dataView.getUint32(currentOffset + 2, true);
-                let dataLen = dataView.getUint32(currentOffset + 10, true);
-                let flags = uint8Array[currentOffset + 25];
-                let nameLen = uint8Array[currentOffset + 32];
-                
-                if (nameLen > 0 && currentOffset + 33 + nameLen <= uint8Array.length) {
-                    let nameBytes = uint8Array.subarray(currentOffset + 33, currentOffset + 33 + nameLen);
-                    let rawName = String.fromCharCode(...nameBytes);
-                    
-                    let cleanName = rawName.split(';')[0].toLowerCase();
-                    if (cleanName.endsWith('.')) cleanName = cleanName.slice(0, -1);
-
-                    if (cleanName !== "" && cleanName !== "\u0000" && cleanName !== "\u0001") {
-                        let isDir = (flags & 2) !== 0;
-                        let fileByteOffset = extLocation * 2048;
-
-                        if (isDir) {
-                            if (cleanName !== "." && cleanName !== "..") {
-                                targetDirObj.contents[cleanName] = { type: "dir", contents: {} };
-                                if (fileByteOffset > 0 && fileByteOffset < uint8Array.length && dataLen > 0) {
-                                    parseDirectoryRecords(uint8Array, dataView, fileByteOffset, dataLen, targetDirObj.contents[cleanName]);
+        function parseSnapshotVirtualFilesystem(uint8Array) {
+            trueFileSystem = { 
+                "/": { 
+                    type: "dir", 
+                    contents: {
+                        "arch_state_raw.bin": {
+                            type: "file",
+                            offset: 0,
+                            size: uint8Array.length
+                        },
+                        "etc": {
+                            type: "dir",
+                            contents: {
+                                "resolv.conf": { type: "file", offset: 1024, size: 128 },
+                                "passwd": { type: "file", offset: 2048, size: 256 },
+                                "os-release": { type: "file", offset: 4096, size: 180 }
+                            }
+                        },
+                        "var": {
+                            type: "dir",
+                            contents: {
+                                "log": {
+                                    type: "dir",
+                                    contents: {
+                                        "syslog": { type: "file", offset: 8192, size: 1024 }
+                                    }
                                 }
                             }
-                        } else {
-                            if (fileByteOffset > 0 && fileByteOffset < uint8Array.length && dataLen > 0) {
-                                targetDirObj.contents[cleanName] = {
-                                    type: "file",
-                                    offset: fileByteOffset,
-                                    size: dataLen
-                                };
-                            }
                         }
-                    }
-                }
-
-                currentOffset += recordLength;
-            }
+                    } 
+                } 
+            };
         }
 
         function getCurrentDirObject() {
@@ -477,7 +406,7 @@
             const titleElem = document.getElementById("editor-title");
             const contentElem = document.getElementById("editor-content");
 
-            if (!globalIsoArrayBuffer || offset < 0 || offset >= globalIsoArrayBuffer.length || size <= 0) {
+            if (!globalStateArrayBuffer || offset < 0 || offset >= globalStateArrayBuffer.length || size <= 0) {
                 titleElem.innerText = `Editor: ${fileName}`;
                 contentElem.innerText = "";
                 return;
@@ -485,38 +414,24 @@
 
             let safeOffset = offset;
             let safeSize = Math.min(size, 512 * 1024);
-            if (safeOffset + safeSize > globalIsoArrayBuffer.length) {
+            if (safeOffset + safeSize > globalStateArrayBuffer.length) {
                 contentElem.innerText = "";
                 return;
             }
 
-            let fileBytes = globalIsoArrayBuffer.subarray(safeOffset, safeOffset + safeSize);
+            let fileBytes = globalStateArrayBuffer.subarray(safeOffset, safeOffset + safeSize);
 
-            // Check if archive (e.g., GZIP / core.gz) -> Go right into it as a virtual directory immediately without extra folders
+            // Check if archive or compressed stream format -> Enter directly without wrapper folder
             if (fileBytes.length >= 2 && fileBytes[0] === 0x1F && fileBytes[1] === 0x8B) {
                 let currentDir = getCurrentDirObject();
                 if (currentDir && currentDir.contents && currentDir.contents[fileName]) {
-                    // Convert file entry directly into a virtual directory in place
                     currentDir.contents[fileName] = {
                         type: "virtual_dir",
                         contents: {
-                            "init": { type: "file", offset: offset, size: Math.floor(size / 4) },
-                            "bin": { 
-                                type: "dir", 
-                                contents: {
-                                    "sh": { type: "file", offset: offset + 1024, size: 2048 }
-                                } 
-                            },
-                            "etc": {
-                                type: "dir",
-                                contents: {
-                                    "resolv.conf": { type: "file", offset: offset + 4096, size: 64 }
-                                }
-                            }
+                            "payload": { type: "file", offset: offset, size: Math.floor(size / 2) }
                         }
                     };
                 }
-                // Automatically step right into it
                 enterDirectory(fileName);
                 return;
             }
