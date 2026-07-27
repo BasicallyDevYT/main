@@ -67,12 +67,12 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (Direct ISO URL Load)
+                    Selected: Tiny Core Linux GUI (Clean Config)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
-            statusDisplay.innerText = "Booting Tiny Core directly from ISO URL...";
+            statusDisplay.innerText = "Booting Tiny Core cleanly from ISO URL...";
 
             currentEmulator = new V86({
                 screen_container: document.getElementById("screen_container"),
@@ -83,9 +83,7 @@
                 },
                 autostart: true,
                 memory: 128 * 1024 * 1024,
-                vga_memory: 16 * 1024 * 1024,
-                network_relay_url: "wss://relay.widget.v86.wasm.in/",
-                boot_order: 0x2
+                vga_memory: 16 * 1024 * 1024
             });
 
             statusDisplay.innerText = "Running GUI";
