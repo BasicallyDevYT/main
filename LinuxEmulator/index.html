@@ -47,7 +47,7 @@
     <h2>Tiny Core Linux GUI Emulator</h2>
     <div class="control-container" id="control_area">
         <div style="margin-bottom: 10px;">
-            <button onclick="startTinyCore()" style="background-color: #333; border: 1px solid #555;">Start Tiny Core GUI (FLWM Desktop)</button>
+            <button onclick="startTinyCore()" style="background-color: #333; border: 1px solid #555;">Start Tiny Core GUI</button>
         </div>
     </div>
 
@@ -67,43 +67,34 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (FLWM Desktop)
+                    Selected: Tiny Core Linux GUI (Direct Kernel Boot)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
-            const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
-
             try {
-                statusDisplay.innerText = "Checking Tiny Core ISO file size...";
-
-                const headResponse = await fetch(isoUrl, { method: 'HEAD', mode: 'cors' }).catch(() => null);
-                const contentLength = headResponse ? headResponse.headers.get('content-length') : null;
-                const total = contentLength ? parseInt(contentLength, 10) : 23 * 1024 * 1024;
-
-                statusDisplay.innerText = "Booting Tiny Core GUI via async CD-ROM stream...";
+                statusDisplay.innerText = "Booting Tiny Core directly via kernel and initrd...";
                 await new Promise(r => setTimeout(r, 20));
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
-                    cdrom: { 
-                        url: isoUrl, 
-                        async: true, 
-                        size: total 
+                    multiboot: {
+                        url: "https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/vmlinuz",
+                        cmdline: "quiet",
+                        initrd: "https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/core.gz"
                     },
                     autostart: true,
                     memory: 128 * 1024 * 1024,
                     vga_memory: 16 * 1024 * 1024,
-                    network_relay_url: "wss://relay.widget.v86.wasm.in/",
-                    boot_order: 0x3
+                    network_relay_url: "wss://relay.widget.v86.wasm.in/"
                 });
 
                 statusDisplay.innerText = "Running GUI";
             } catch (err) {
                 console.error(err);
-                statusDisplay.innerText = "Error loading ISO: " + err.message;
+                statusDisplay.innerText = "Error loading files: " + err.message;
             }
         }
     </script>
