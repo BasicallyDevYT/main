@@ -39,6 +39,7 @@
             margin-top: 10px;
             font-size: 16px;
             color: #aaa;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -47,11 +48,11 @@
     <h2>Tiny Core Linux GUI Emulator</h2>
     <div class="control-container" id="control_area">
         <div style="margin-bottom: 10px;">
-            <button onclick="startTinyCore()" style="background-color: #333; border: 1px solid #555;">Start Tiny Core GUI</button>
+            <button onclick="startTinyCore()" style="background-color: #333; border: 1px solid #555;">Start CD-ROM Buffer Boot</button>
         </div>
     </div>
 
-    <div id="status-display">Click to start the graphical environment.</div>
+    <div id="status-display">Click to download ISO into memory and boot from CD-ROM.</div>
 
     <div id="screen_container">
         <div id="screen"></div>
@@ -67,7 +68,7 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (ISO Loaded Directly into Hard Drive Buffer)
+                    Selected: Full Download into CD-ROM ArrayBuffer + Blank HDD for Storage
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
@@ -75,20 +76,51 @@
             const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
 
             try {
-                statusDisplay.innerText = "Downloading ISO straight into the hard drive buffer...";
+                statusDisplay.innerText = "Downloading ISO completely into memory...";
                 
                 const response = await fetch(isoUrl);
-                if (!response.ok) throw new Error("Failed to fetch ISO file (HTTP " + response.status + ")");
-                const isoArrayBuffer = await response.arrayBuffer();
+                if (!response.ok) throw new Error("HTTP error " + response.status);
 
-                statusDisplay.innerText = "Booting with ISO as primary hard drive (hda)...";
+                const contentLength = response.headers.get('Content-Length');
+                const total = contentLength ? parseInt(contentLength, 10) : 0;
+                
+                const reader = response.body.getReader();
+                let receivedLength = 0;
+                let chunks = [];
+
+                while(true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    receivedLength += value.length;
+                    
+                    if (total > 0) {
+                        let percent = ((receivedLength / total) * 100).toFixed(1);
+                        statusDisplay.innerText = `Downloading: ${percent}% (${(receivedLength / (1024*1024)).toFixed(1)} MB)`;
+                    } else {
+                        statusDisplay.innerText = `Downloading: ${(receivedLength / (1024*1024)).toFixed(1)} MB received...`;
+                    }
+                }
+
+                statusDisplay.innerText = "Combining chunks into ArrayBuffer...";
+                let isoArrayBuffer = new Uint8Array(receivedLength);
+                let position = 0;
+                for(let chunk of chunks) {
+                    isoArrayBuffer.set(chunk, position);
+                    position += chunk.length;
+                }
+
+                statusDisplay.innerText = "Booting v86 with ISO on CD-ROM and 1GB HDD for temp files...";
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
+                    cdrom: { 
+                        buffer: isoArrayBuffer.buffer 
+                    },
                     hda: { 
-                        buffer: isoArrayBuffer 
+                        buffer: new ArrayBuffer(1024 * 1024 * 1024) 
                     },
                     wasm_path: "build/v86.wasm",
                     autostart: true,
@@ -101,7 +133,7 @@
                 statusDisplay.innerText = "Running GUI";
             } catch (err) {
                 console.error(err);
-                statusDisplay.innerText = "Error loading ISO: " + err.message;
+                statusDisplay.innerText = "Fatal Error: " + err.message;
             }
         }
     </script>
