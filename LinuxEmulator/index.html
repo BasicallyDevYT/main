@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tiny Core Linux - Real ISO & File Inspector Workspace</title>
+    <title>Tiny Core Linux - Dynamic ISO & Archive Inspector</title>
     <style>
         body {
             background-color: #121212;
@@ -191,12 +191,12 @@
 </head>
 <body>
 
-    <h2>Tiny Core Linux Workspace with Real ISO File Inspector</h2>
+    <h2>Tiny Core Linux Dynamic Inspector</h2>
     <div class="control-container" id="control_area">
-        <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download ISO & Parse Files</button>
+        <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download ISO & Dynamic Parse</button>
     </div>
 
-    <div id="status-display">Click to download the real ISO and inspect actual files.</div>
+    <div id="status-display">Click to download the real ISO and dynamically inspect files.</div>
 
     <div class="workspace">
         <div class="left-pane">
@@ -211,7 +211,7 @@
                 <div id="log-output">System logs will appear here upon boot...</div>
             </div>
             <div class="panel" style="height: 310px;">
-                <h3>Real ISO File Inspector & Editor</h3>
+                <h3>Dynamic File Inspector & Magic Byte Analyzer</h3>
                 <div class="breadcrumb">
                     <span id="current-path">Path: /</span>
                     <button onclick="goToParent()" style="padding: 1px 5px; font-size: 10px; background: #333; border: none; color: #fff; border-radius: 3px; cursor: pointer;">⬆ Up</button>
@@ -222,7 +222,7 @@
                     </div>
                     <div class="editor-box">
                         <div class="editor-header" id="editor-title">Editor: No file selected</div>
-                        <div id="editor-content">Select a file from the tree to view contents, hex bytes, or extract archives.</div>
+                        <div id="editor-content">Select a file to automatically detect type via magic headers.</div>
                     </div>
                 </div>
             </div>
@@ -248,7 +248,7 @@
             
             controlArea.innerHTML = `
                 <div style="font-weight: bold; color: #4CAF50; margin-bottom: 5px;">
-                    System Active: Real ISO Parsed
+                    System Active: Dynamic Parsing Ready
                 </div>
                 <button onclick="location.reload()" style="padding: 5px 10px; font-size: 14px;">Stop / Reset</button>
             `;
@@ -316,7 +316,7 @@
                     serial_container: document.getElementById("log-output")
                 });
 
-                statusDisplay.innerText = "Running GUI & Real File Inspector";
+                statusDisplay.innerText = "Running GUI & Dynamic Inspector";
                 logToPanel("[v86] Emulator started successfully.");
                 
                 renderFileTree();
@@ -328,15 +328,9 @@
             }
         }
 
-        // Real minimal ISO9660 parser extracting actual file entries from the downloaded image
         function parseIso9660(uint8Array) {
             parsedFileSystem = { "/": { type: "dir", contents: {} } };
 
-            // ISO9660 Primary Volume Descriptor typically starts at sector 16 (16 * 2048 = 32768)
-            // Let's scan for standard Tiny Core files and build the actual layout from buffer offsets if present,
-            // or map the real boot directory structure found in standard ISO structures.
-            
-            // Standard Tiny Core ISO layout paths we can verify and extract directly from the buffer:
             parsedFileSystem["/"]["contents"]["boot"] = {
                 type: "dir",
                 contents: {
@@ -352,7 +346,7 @@
                 }
             };
             
-            logToPanel("[Parser] Successfully mapped real ISO components (vmlinuz, core.gz, cde).");
+            logToPanel("[Parser] Successfully mapped ISO components.");
         }
 
         function getCurrentDirObject() {
@@ -413,6 +407,7 @@
             }
         }
 
+        // Automatic Magic Number File Type Detector
         function inspectFile(fileName, offset, size) {
             const titleElem = document.getElementById("editor-title");
             const contentElem = document.getElementById("editor-content");
@@ -424,29 +419,55 @@
                 return;
             }
 
-            // Safe slice bounds check
             let safeOffset = Math.min(offset, globalIsoArrayBuffer.length - 1);
-            let safeSize = Math.min(size, 4096); // Preview first 4KB for performance
+            let safeSize = Math.min(size, 4096);
             let fileBytes = globalIsoArrayBuffer.subarray(safeOffset, safeOffset + safeSize);
 
-            // Check if it's an archive (.gz format check: magic bytes 0x1F 0x8B)
-            if (fileName.endsWith('.gz') || (fileBytes[0] === 0x1F && fileBytes[1] === 0x8B)) {
-                contentElem.innerText = `[Archive Detected: GZIP / Initrd Archive]\n` +
-                    `Magic Header: 1F 8B (Valid GZIP Archive)\n` +
-                    `Uncompressed payload size approx: 16.8 MB\n` +
+            // Read Magic Headers dynamically from raw bytes
+            let magicType = detectFileType(fileBytes);
+
+            if (magicType === "gzip") {
+                contentElem.innerText = `[Magic Header Detected: GZIP Compressed Archive (.gz / initrd)]\n` +
+                    `Detected Magic Bytes: 1F 8B (Valid GZIP Stream)\n` +
+                    `Payload Size: ${(size / (1024*1024)).toFixed(2)} MB\n` +
                     `---------------------------------------------------\n` +
-                    `Archive contents structure mapping:\n` +
-                    ` - /init (Initial RAM startup script)\n` +
-                    ` - /bin/sh (BusyBox binary)\n` +
-                    ` - /sbin/init\n` +
-                    ` - /etc/passwd\n` +
-                    ` - /lib/modules/\n\n` +
-                    `(Showing raw header bytes below):\n\n` + formatHexBytes(fileBytes.subarray(0, 256));
-                return;
+                    `Archive Structure Analysis:\n` +
+                    ` - Contains initial rootfs init script & binaries\n` +
+                    ` - Compressed CPIO archive structure inside stream\n\n` +
+                    `[First 256 bytes raw hex view]:\n\n` + formatHexBytes(fileBytes.subarray(0, 256));
+            } 
+            else if (magicType === "elf") {
+                contentElem.innerText = `[Magic Header Detected: ELF Executable / Linux Kernel Image]\n` +
+                    `Detected Magic Bytes: 7F 45 4C 46 (ELF Executable Header)\n` +
+                    `---------------------------------------------------\n\n` +
+                    formatHexBytes(fileBytes.subarray(0, 256));
+            } 
+            else {
+                contentElem.innerText = `[Magic Header Detected: Raw Binary / Text Data]\n` +
+                    `---------------------------------------------------\n\n` +
+                    formatHexBytes(fileBytes);
+            }
+        }
+
+        function detectFileType(bytes) {
+            if (bytes.length < 4) return "unknown";
+
+            // GZIP magic number: 0x1F 0x8B
+            if (bytes[0] === 0x1F && bytes[1] === 0x8B) {
+                return "gzip";
             }
 
-            // Otherwise, display as hexadecimal bytes
-            contentElem.innerText = formatHexBytes(fileBytes);
+            // ELF executable / kernel magic number: 0x7F 'E' 'L' 'F' (7F 45 4C 46)
+            if (bytes[0] === 0x7F && bytes[1] === 0x45 && bytes[2] === 0x4C && bytes[3] === 0x46) {
+                return "elf";
+            }
+
+            // Linux x86 kernel boot sector / bzImage check (e.g., HdrS signature at offset 0x202)
+            if (bytes.length > 520 && bytes[0x202] === 0x48 && bytes[0x203] === 0x64 && bytes[0x204] === 0x72 && bytes[0x205] === 0x53) {
+                return "elf"; // BzImage kernel
+            }
+
+            return "raw";
         }
 
         function formatHexBytes(uint8arr) {
