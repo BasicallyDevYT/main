@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tiny Core Linux - Human Readable File System Viewer</title>
+    <title>Tiny Core Linux - Interactive Virtual File Explorer</title>
     <style>
         body {
             background-color: #121212;
@@ -91,7 +91,7 @@
             word-break: break-all;
         }
 
-        #human-file-browser {
+        #interactive-explorer {
             flex-grow: 1;
             background-color: #0a0a0a;
             color: #ccc;
@@ -103,42 +103,54 @@
             border: 1px solid #222;
         }
 
-        .dir-tree {
+        .breadcrumb {
+            background-color: #151515;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #3498db;
+            margin-bottom: 8px;
+            border: 1px solid #222;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-list-ui {
             list-style: none;
-            padding-left: 0;
+            padding: 0;
             margin: 0;
         }
 
-        .dir-tree li {
-            padding: 4px 6px;
+        .file-row {
+            padding: 6px 8px;
             margin: 2px 0;
             background-color: #151515;
             border-radius: 4px;
             border: 1px solid #222;
-        }
-
-        .folder-name {
-            font-weight: bold;
-            color: #4CAF50;
             cursor: pointer;
-        }
-
-        .file-list {
-            list-style: none;
-            padding-left: 15px;
-            margin: 4px 0 0 0;
-        }
-
-        .file-list li {
-            background-color: #1a1a1a;
-            color: #ddd;
-            padding: 3px 6px;
-            margin: 2px 0;
-            border-radius: 3px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-row:hover {
+            background-color: #2a2a2a;
+            color: #fff;
+            border-color: #444;
+        }
+
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-type {
             font-family: monospace;
-            font-size: 12px;
+            font-size: 11px;
+            color: #888;
         }
 
         #status-display {
@@ -151,12 +163,12 @@
 </head>
 <body>
 
-    <h2>Tiny Core Linux Human File Explorer</h2>
+    <h2>Tiny Core Linux Interactive Workspace</h2>
     <div class="control-container" id="control_area">
-        <button onclick="startTinyCore()" style="background-color: #333; border: 1px solid #555;">Start System & Human File Tree</button>
+        <button onclick="startTinyCore()" style="background-color: #333; border: 1px solid #555;">Start Emulator & Clickable Explorer</button>
     </div>
 
-    <div id="status-display">Click to start emulator and monitor guest workspace.</div>
+    <div id="status-display">Click to start emulator and navigate directories.</div>
 
     <div class="workspace">
         <div class="left-pane">
@@ -171,19 +183,14 @@
                 <div id="log-output">System logs will appear here upon boot...</div>
             </div>
             <div class="panel">
-                <h3>Readable File System View (Live Sync)</h3>
-                <div id="human-file-browser">
-                    <ul class="dir-tree">
-                        <li>
-                            <span class="folder-name">📁 / (Root RAM Overlay)</span>
-                            <ul class="file-list">
-                                <li><span>📄 boot/</span><span>[Directory]</span></li>
-                                <li><span>📄 home/</span><span>[Directory]</span></li>
-                                <li><span>📄 etc/</span><span>[Directory]</span></li>
-                                <li><span>📄 tmp/</span><span>[Directory]</span></li>
-                                <li><span>📄 mnt/</span><span>[Directory]</span></li>
-                            </ul>
-                        </li>
+                <h3>Interactive File Explorer</h3>
+                <div class="breadcrumb">
+                    <span id="current-path">Path: /</span>
+                    <button onclick="goToParent()" style="padding: 2px 6px; font-size: 11px; background: #333; border: none; color: #fff; border-radius: 3px; cursor: pointer;">⬆ Up</button>
+                </div>
+                <div id="interactive-explorer">
+                    <ul class="file-list-ui" id="file-list-container">
+                        <li class="file-row" style="color: #666; cursor: default;"><span>Awaiting system boot...</span></li>
                     </ul>
                 </div>
             </div>
@@ -193,6 +200,106 @@
     <script src="libv86.js"></script>
     <script>
         let currentEmulator = null;
+
+        // Simulated fully traversable virtual filesystem structure representing Tiny Core's live memory state
+        const virtualFileSystem = {
+            "/": {
+                type: "dir",
+                contents: {
+                    "boot": { type: "dir", contents: { 
+                        "vmlinuz": { type: "file", size: "4.2 MB", content: "Linux Kernel binary image loaded from CD-ROM." },
+                        "core.gz": { type: "file", size: "16.8 MB", content: "Tiny Core root initial RAM disk file system archive." }
+                    }},
+                    "home": { type: "dir", contents: { 
+                        "tc": { type: "dir", contents: { 
+                            ".profile": { type: "file", size: "140 B", content: "export PATH=$PATH:/usr/local/bin\n" },
+                            ".ashrc": { type: "file", size: "65 B", content: "alias ll='ls -la'\n" }
+                        }}
+                    }},
+                    "etc": { type: "dir", contents: { 
+                        "passwd": { type: "file", size: "112 B", content: "root:x:0:0:root:/root:/bin/sh\rtc:x:1001:50:Guest Account:/home/tc:/bin/sh\n" },
+                        "resolv.conf": { type: "file", size: "38 B", content: "nameserver 8.8.8.8\n" },
+                        "hostname": { type: "file", size: "10 B", content: "tinycore\n" }
+                    }},
+                    "tmp": { type: "dir", contents: {
+                        "tce": { type: "dir", contents: {
+                            "optional": { type: "dir", contents: {} }
+                        }}
+                    }},
+                    "mnt": { type: "dir", contents: {
+                        "sr0": { type: "dir", contents: {
+                            "cde": { type: "dir", contents: {
+                                "onboot.lst": { type: "file", size: "24 B", content: "flwm_topside.tcz\nwbar.tcz\n" }
+                            }}
+                        }}
+                    }}
+                }
+            }
+        };
+
+        let currentPathStack = ["/"];
+
+        function getCurrentDirObject() {
+            let current = virtualFileSystem["/"];
+            for (let i = 1; i < currentPathStack.length; i++) {
+                let dirName = currentPathStack[i];
+                if (current.contents && current.contents[dirName]) {
+                    current = current.contents[dirName];
+                }
+            }
+            return current;
+        }
+
+        function renderExplorer() {
+            const container = document.getElementById("file-list-container");
+            const pathSpan = document.getElementById("current-path");
+            
+            let fullPathStr = "/" + currentPathStack.slice(1).join("/");
+            pathSpan.innerText = "Path: " + fullPathStr;
+
+            let dirObj = getCurrentDirObject();
+            if (!dirObj || !dirObj.contents) {
+                container.innerHTML = `<li class="file-row" style="color: #888;"><span>Empty directory</span></li>`;
+                return;
+            }
+
+            let html = "";
+            for (let [name, item] of Object.entries(dirObj.contents)) {
+                if (item.type === "dir") {
+                    html += `
+                        <li class="file-row" onclick="enterDirectory('${name}')">
+                            <span class="file-name">📁 <b>${name}/</b></span>
+                            <span class="file-type">[Directory]</span>
+                        </li>
+                    `;
+                } else {
+                    html += `
+                        <li class="file-row" onclick="viewFileContent('${name}', '${item.size}', '${btoa(item.content)}')">
+                            <span class="file-name">📄 ${name}</span>
+                            <span class="file-type">${item.size}</span>
+                        </li>
+                    `;
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        function enterDirectory(dirName) {
+            currentPathStack.push(dirName);
+            renderExplorer();
+        }
+
+        function goToParent() {
+            if (currentPathStack.length > 1) {
+                currentPathStack.pop();
+                renderExplorer();
+            }
+        }
+
+        function viewFileContent(fileName, size, base64Content) {
+            let decoded = atob(base64Content);
+            alert(`File: ${fileName} (${size})\n-----------------------------------\n\n` + decoded);
+        }
 
         function logToPanel(text) {
             const logBox = document.getElementById("log-output");
@@ -206,7 +313,7 @@
             
             controlArea.innerHTML = `
                 <div style="font-weight: bold; color: #4CAF50; margin-bottom: 5px;">
-                    System Active: Human-Readable File Tree Initialized
+                    System Active: Clickable File Browser Ready
                 </div>
                 <button onclick="location.reload()" style="padding: 5px 10px; font-size: 14px;">Stop / Reset</button>
             `;
@@ -271,13 +378,16 @@
                     serial_container: document.getElementById("log-output")
                 });
 
-                statusDisplay.innerText = "Running GUI & Human File Explorer";
+                statusDisplay.innerText = "Running GUI & Interactive Workspace";
                 logToPanel("[v86] Emulator started successfully.");
+                
+                // Populate the interactive file browser view
+                renderExplorer();
 
             } catch (err) {
                 console.error(err);
                 statusDisplay.innerText = "Fatal Error: " + err.message;
-                logToPanel("[Error] " + err.message);
+                logToPanel("[Error] + err.message");
             }
         }
     </script>
