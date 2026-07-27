@@ -67,7 +67,7 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (High-Performance Multi-Core Config)
+                    Selected: Tiny Core Linux GUI (ISO Loaded Directly into Hard Drive Buffer)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
@@ -75,23 +75,20 @@
             const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
 
             try {
-                statusDisplay.innerText = "Downloading ISO into memory buffer...";
+                statusDisplay.innerText = "Downloading ISO straight into the hard drive buffer...";
                 
                 const response = await fetch(isoUrl);
                 if (!response.ok) throw new Error("Failed to fetch ISO file (HTTP " + response.status + ")");
                 const isoArrayBuffer = await response.arrayBuffer();
 
-                statusDisplay.innerText = "Booting with multi-core processor, 512MB RAM, 128MB VGA, and 1GB hard drive...";
+                statusDisplay.innerText = "Booting with ISO as primary hard drive (hda)...";
 
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
                     vga_bios: { url: "bios/vgabios.bin" },
-                    cdrom: { 
+                    hda: { 
                         buffer: isoArrayBuffer 
-                    },
-                    hda: {
-                        buffer: new ArrayBuffer(1024 * 1024 * 1024)
                     },
                     wasm_path: "build/v86.wasm",
                     autostart: true,
