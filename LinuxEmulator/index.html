@@ -61,33 +61,50 @@
     <script>
         let currentEmulator = null;
 
-        function startTinyCore() {
+        async function startTinyCore() {
             const controlArea = document.getElementById("control_area");
             const statusDisplay = document.getElementById("status-display");
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (Correct WASM Build Path)
+                    Selected: Tiny Core Linux GUI (512MB RAM + 1GB Hard Drive)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
-            statusDisplay.innerText = "Booting Tiny Core with build/v86.wasm path...";
+            const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
 
-            currentEmulator = new V86({
-                screen_container: document.getElementById("screen_container"),
-                bios: { url: "bios/seabios.bin" },
-                vga_bios: { url: "bios/vgabios.bin" },
-                cdrom: { 
-                    url: 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso'
-                },
-                wasm_path: "build/v86.wasm",
-                autostart: true,
-                memory: 128 * 1024 * 1024,
-                vga_memory: 16 * 1024 * 1024
-            });
+            try {
+                statusDisplay.innerText = "Downloading ISO into memory buffer...";
+                
+                const response = await fetch(isoUrl);
+                if (!response.ok) throw new Error("Failed to fetch ISO file (HTTP " + response.status + ")");
+                const isoArrayBuffer = await response.arrayBuffer();
 
-            statusDisplay.innerText = "Running GUI";
+                statusDisplay.innerText = "Booting with 512MB RAM, 128MB VGA, and 1GB virtual hard drive...";
+
+                currentEmulator = new V86({
+                    screen_container: document.getElementById("screen_container"),
+                    bios: { url: "bios/seabios.bin" },
+                    vga_bios: { url: "bios/vgabios.bin" },
+                    cdrom: { 
+                        buffer: isoArrayBuffer 
+                    },
+                    hda: {
+                        // 1GB virtual hard drive buffer for temp files and storage
+                        buffer: new ArrayBuffer(1024 * 1024 * 1024)
+                    },
+                    wasm_path: "build/v86.wasm",
+                    autostart: true,
+                    memory: 512 * 1024 * 1024,
+                    vga_memory: 128 * 1024 * 1024
+                });
+
+                statusDisplay.innerText = "Running GUI";
+            } catch (err) {
+                console.error(err);
+                statusDisplay.innerText = "Error loading ISO: " + err.message;
+            }
         }
     </script>
 </body>
