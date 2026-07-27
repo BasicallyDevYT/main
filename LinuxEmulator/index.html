@@ -67,12 +67,12 @@
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux GUI (Clean Config)
+                    Selected: Tiny Core Linux GUI (Correct WASM Build Path)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
-            statusDisplay.innerText = "Booting Tiny Core cleanly from ISO URL...";
+            statusDisplay.innerText = "Booting Tiny Core with build/v86.wasm path...";
 
             currentEmulator = new V86({
                 screen_container: document.getElementById("screen_container"),
@@ -81,6 +81,7 @@
                 cdrom: { 
                     url: 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso'
                 },
+                wasm_path: "build/v86.wasm",
                 autostart: true,
                 memory: 128 * 1024 * 1024,
                 vga_memory: 16 * 1024 * 1024
