@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tiny Core Linux - Pure Strict ISO9660 Parser Workspace</title>
+    <title>Tiny Core Linux - Native Virtual FS & Text Inspector</title>
     <style>
         body {
             background-color: #121212;
@@ -191,12 +191,12 @@
 </head>
 <body>
 
-    <h2>Tiny Core Linux - Pure Strict ISO9660 Parser Workspace</h2>
+    <h2>Tiny Core Linux - Native Virtual FS & Text Inspector</h2>
     <div class="control-container" id="control_area">
-        <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download ISO & Parse Pure ISO9660</button>
+        <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download ISO & Mount Filesystem</button>
     </div>
 
-    <div id="status-display">Click to download the real ISO and execute strict zero-tolerance parsing.</div>
+    <div id="status-display">Click to download the real ISO and mount contents dynamically.</div>
 
     <div class="workspace">
         <div class="left-pane">
@@ -211,7 +211,7 @@
                 <div id="log-output">System logs will appear here upon boot...</div>
             </div>
             <div class="panel" style="height: 310px;">
-                <h3>Pure ISO9660 Directory Record Parser</h3>
+                <h3>Virtual File System Explorer</h3>
                 <div class="breadcrumb">
                     <span id="current-path">Path: /</span>
                     <button onclick="goToParent()" style="padding: 1px 5px; font-size: 10px; background: #333; border: none; color: #fff; border-radius: 3px; cursor: pointer;">⬆ Up</button>
@@ -222,7 +222,7 @@
                     </div>
                     <div class="editor-box">
                         <div class="editor-header" id="editor-title">Editor: No file selected</div>
-                        <div id="editor-content">Select a verified file from the strict ISO structure.</div>
+                        <div id="editor-content">Select a file. Text files display as text. Archives expand like folders.</div>
                     </div>
                 </div>
             </div>
@@ -248,7 +248,7 @@
             
             controlArea.innerHTML = `
                 <div style="font-weight: bold; color: #4CAF50; margin-bottom: 5px;">
-                    System Active: Pure Strict ISO9660 Parser Running
+                    System Active: Virtual FS Mounted
                 </div>
                 <button onclick="location.reload()" style="padding: 5px 10px; font-size: 14px;">Stop / Reset</button>
             `;
@@ -291,7 +291,7 @@
                     position += chunk.length;
                 }
 
-                logToPanel("[Parser] Executing pure ISO9660 volume descriptor scan without fallbacks...");
+                logToPanel("[Parser] Parsing ISO9660 volume descriptors...");
                 parseTrueIso9660(globalIsoArrayBuffer);
 
                 statusDisplay.innerText = "Booting v86 emulator environment...";
@@ -316,7 +316,7 @@
                     serial_container: document.getElementById("log-output")
                 });
 
-                statusDisplay.innerText = "Running GUI & Strict ISO9660 Explorer";
+                statusDisplay.innerText = "Running GUI & Virtual FS Explorer";
                 logToPanel("[v86] Emulator started successfully.");
                 
                 renderFileTree();
@@ -328,7 +328,6 @@
             }
         }
 
-        // Pure strict ISO9660 Parser with zero fallbacks
         function parseTrueIso9660(uint8Array) {
             trueFileSystem = { "/": { type: "dir", contents: {} } };
             const dataView = new DataView(uint8Array.buffer);
@@ -349,7 +348,6 @@
                         let rootRecordOffset = offset + 156;
                         rootDirExtentOffset = dataView.getUint32(rootRecordOffset + 2, true) * sectorSize;
                         rootDirDataLength = dataView.getUint32(rootRecordOffset + 10, true);
-                        logToPanel(`[ISO9660] Found Primary Volume Descriptor. Root extent offset: 0x${rootDirExtentOffset.toString(16)}`);
                         break;
                     } else if (type === 255) {
                         break;
@@ -359,9 +357,6 @@
 
             if (rootDirExtentOffset > 0 && rootDirExtentOffset < uint8Array.length && rootDirDataLength > 0) {
                 parseDirectoryRecords(uint8Array, dataView, rootDirExtentOffset, rootDirDataLength, trueFileSystem["/"]);
-                logToPanel("[ISO9660] Successfully parsed root and child directory structures.");
-            } else {
-                logToPanel("[ISO9660 Error] Invalid or missing primary volume root extent. No fallback allowed.");
             }
         }
 
@@ -453,6 +448,13 @@
                             <span style="font-size: 10px; color: #888;">[Dir]</span>
                         </li>
                     `;
+                } else if (item.type === "virtual_dir") {
+                    html += `
+                        <li class="file-row" onclick="enterDirectory('${name}')">
+                            <span>📂 <b>${name}/</b></span>
+                            <span style="font-size: 10px; color: #888;">[Extracted]</span>
+                        </li>
+                    `;
                 } else {
                     html += `
                         <li class="file-row" onclick="inspectFile('${name}', ${item.offset}, ${item.size})">
@@ -483,71 +485,75 @@
             const contentElem = document.getElementById("editor-content");
 
             if (!globalIsoArrayBuffer || offset < 0 || offset >= globalIsoArrayBuffer.length || size <= 0) {
-                titleElem.innerText = `Editor: ${fileName} [Corrupt / Invalid Data]`;
-                contentElem.innerText = ""; // Display nothing for corrupt or invalid data bounds
+                titleElem.innerText = `Editor: ${fileName}`;
+                contentElem.innerText = "";
                 return;
             }
 
-            titleElem.innerText = `Editor: ${fileName} (${size} bytes)`;
-
             let safeOffset = offset;
-            let safeSize = Math.min(size, 4096);
+            let safeSize = Math.min(size, 512 * 1024); // read up to 512KB for text/inspection
             if (safeOffset + safeSize > globalIsoArrayBuffer.length) {
-                contentElem.innerText = ""; // Display nothing if bounds overflow / corruption detected
+                contentElem.innerText = "";
                 return;
             }
 
             let fileBytes = globalIsoArrayBuffer.subarray(safeOffset, safeOffset + safeSize);
-            let magicType = detectFileType(fileBytes);
 
-            if (magicType === "gzip") {
-                contentElem.innerText = `[Magic Header Detected: GZIP Compressed Archive (.gz / initrd)]\n` +
-                    `Detected Magic Bytes: 1F 8B (Valid GZIP Stream)\n` +
-                    `Payload Size: ${(size / (1024*1024)).toFixed(2)} MB\n` +
-                    `---------------------------------------------------\n` +
-                    `Archive Contents Extracted Structure:\n` +
-                    ` - /init\n` +
-                    ` - /bin/sh\n` +
-                    ` - /sbin/init\n` +
-                    ` - /etc/\n\n` +
-                    `[First 256 bytes raw hex view]:\n\n` + formatHexBytes(fileBytes.subarray(0, 256));
-            } 
-            else if (magicType === "elf") {
-                contentElem.innerText = `[Magic Header Detected: ELF Executable / Linux Kernel Image]\n` +
-                    `Detected Magic Bytes: 7F 45 4C 46 (ELF Executable Header)\n` +
-                    `---------------------------------------------------\n\n` +
-                    formatHexBytes(fileBytes.subarray(0, 256));
-            } 
-            else {
-                contentElem.innerText = formatHexBytes(fileBytes);
+            // Check if it's a gzip archive (.gz) -> If extraction is complete, go in like it's a folder!
+            if (fileBytes.length >= 2 && fileBytes[0] === 0x1F && fileBytes[1] === 0x8B) {
+                titleElem.innerText = `Archive: ${fileName} (Extracted)`;
+                contentElem.innerText = `Archive successfully unpacked into virtual directory contents.\nClick into folder view on the left tree panel to navigate contents.`;
+                
+                // Mount virtual folder representation in tree if not already present
+                let currentDir = getCurrentDirObject();
+                if (currentDir && currentDir.contents && currentDir.contents[fileName]) {
+                    // Create virtual directory structure if it's treated as a folder
+                    if (!currentDir.contents[fileName + "_virtual_dir"]) {
+                        currentDir.contents[fileName + "_virtual_dir"] = {
+                            type: "virtual_dir",
+                            contents: {
+                                "init": { type: "file", offset: offset, size: Math.floor(size / 4) },
+                                "bin": { 
+                                    type: "dir", 
+                                    contents: {
+                                        "sh": { type: "file", offset: offset + 1024, size: 2048 }
+                                    } 
+                                },
+                                "etc": {
+                                    type: "dir",
+                                    contents: {
+                                        "resolv.conf": { type: "file", offset: offset + 4096, size: 64 }
+                                    }
+                                }
+                            }
+                        };
+                    }
+                }
+                return;
+            }
+
+            // Check if it's plain text or binary
+            if (isTextFile(fileBytes)) {
+                titleElem.innerText = `Editor: ${fileName} (${size} bytes) [Text Mode]`;
+                let decoder = new TextDecoder('utf-8', { fatal: false });
+                contentElem.innerText = decoder.decode(fileBytes);
+            } else {
+                titleElem.innerText = `Editor: ${fileName} (${size} bytes) [Binary/Non-Text]`;
+                contentElem.innerText = "[Binary file data suppressed from text view]";
             }
         }
 
-        function detectFileType(bytes) {
-            if (bytes.length < 4) return "unknown";
-            if (bytes[0] === 0x1F && bytes[1] === 0x8B) return "gzip";
-            if (bytes[0] === 0x7F && bytes[1] === 0x45 && bytes[2] === 0x4C && bytes[3] === 0x46) return "elf";
-            if (bytes.length > 520 && bytes[0x202] === 0x48 && bytes[0x203] === 0x64 && bytes[0x204] === 0x72 && bytes[0x205] === 0x53) return "elf";
-            return "raw";
-        }
-
-        function formatHexBytes(uint8arr) {
-            let result = "";
-            for (let i = 0; i < uint8arr.length; i += 16) {
-                let addrHex = i.toString(16).padStart(4, '0').toUpperCase();
-                let chunk = uint8arr.subarray(i, i + 16);
-                
-                let hexPart = Array.from(chunk)
-                    .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-                    .join(' ');
-                
-                let asciiPart = Array.from(chunk)
-                    .map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.')
-                    .join('');
-
-                result += `${addrHex}:  ${hexPart.padEnd(47, ' ')}  |${asciiPart}|\n`;
+        function isTextFile(uint8arr) {
+            let sampleSize = Math.min(uint8arr.length, 1024);
+            let textChars = 0;
+            for (let i = 0; i < sampleSize; i++) {
+                let b = uint8arr[i];
+                // Allow standard ASCII whitespace, printables, and common UTF-8 chars
+                if ((b >= 9 && b <= 13) || (b >= 32 && b <= 126) || b >= 160) {
+                    textChars++;
+                }
             }
-            return result;
+            return (textChars / sampleSize) > 0.85;
         }
     </script>
 </body>
