@@ -276,9 +276,11 @@
                 
                 parseSnapshotVirtualFilesystem(globalStateArrayBuffer);
 
-                statusDisplay.innerText = "Initializing v86 emulator environment...";
-                logToPanel("[v86] Initializing V86 instance...");
+                statusDisplay.innerText = "Initializing v86 emulator with state restore...";
+                logToPanel("[v86] Initializing V86 instance with initial state blob...");
 
+                // v86 requires passing the initial state buffer directly into the constructor config 
+                // when restoring from a saved state blob, rather than calling .restore_state() on an uninitialized instance.
                 currentEmulator = new V86({
                     screen_container: document.getElementById("screen_container"),
                     bios: { url: "bios/seabios.bin" },
@@ -289,16 +291,12 @@
                     vga_memory: 128 * 1024 * 1024,
                     cpus: 4,
                     acpi: true,
+                    initial_state: globalStateArrayBuffer.buffer,
                     serial_container: document.getElementById("log-output")
                 });
 
-                statusDisplay.innerText = "Restoring state snapshot into v86...";
-                logToPanel("[v86] Restoring state blob into running emulator...");
-
-                currentEmulator.restore_state(globalStateArrayBuffer.buffer);
-
                 statusDisplay.innerText = "Arch Linux Snapshot Active & Explorer Mounted";
-                logToPanel("[v86] Snapshot restored successfully.");
+                logToPanel("[v86] Snapshot state loaded successfully during initialization.");
                 
                 renderFileTree();
 
