@@ -197,7 +197,7 @@
         <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download State Blob & Restore Snapshot</button>
     </div>
 
-    <div id="status-display">Click to load the Arch Linux zstd memory snapshot.</div>
+    <div id="status-display">Click to load the Arch Linux zstd memory snapshot from Hugging Face.</div>
 
     <div class="workspace">
         <div class="left-pane">
@@ -254,11 +254,11 @@
                 <button onclick="location.reload()" style="padding: 5px 10px; font-size: 14px;">Stop / Reset</button>
             `;
 
-            const stateUrl = 'https://i.copy.sh/arch_state-v3.bin.zst';
+            const stateUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/arch_state-v3.bin.zst';
 
             try {
-                statusDisplay.innerText = "Downloading Arch Linux snapshot (.zst)...";
-                logToPanel("[Init] Fetching zstd snapshot blob...");
+                statusDisplay.innerText = "Downloading Arch Linux snapshot (.zst) from Hugging Face...";
+                logToPanel("[Init] Fetching zstd snapshot blob from Hugging Face...");
                 
                 const response = await fetch(stateUrl);
                 if (!response.ok) throw new Error("HTTP error " + response.status);
@@ -274,7 +274,6 @@
 
                 logToPanel(`[Decompress] Successfully unpacked state blob to ${(decompressed.length / (1024*1024)).toFixed(1)} MB.`);
                 
-                // Build virtual filesystem mapping out of the memory state blob chunks for exploration
                 parseSnapshotVirtualFilesystem(globalStateArrayBuffer);
 
                 statusDisplay.innerText = "Initializing v86 emulator environment...";
@@ -421,7 +420,6 @@
 
             let fileBytes = globalStateArrayBuffer.subarray(safeOffset, safeOffset + safeSize);
 
-            // Check if archive or compressed stream format -> Enter directly without wrapper folder
             if (fileBytes.length >= 2 && fileBytes[0] === 0x1F && fileBytes[1] === 0x8B) {
                 let currentDir = getCurrentDirObject();
                 if (currentDir && currentDir.contents && currentDir.contents[fileName]) {
@@ -436,13 +434,11 @@
                 return;
             }
 
-            // Check if text file
             if (isTextFile(fileBytes)) {
                 titleElem.innerText = `Editor: ${fileName} (${size} bytes) [Text Mode]`;
                 let decoder = new TextDecoder('utf-8', { fatal: false });
                 contentElem.innerText = decoder.decode(fileBytes);
             } else {
-                // Display raw binary hex/ascii for all non-text files
                 titleElem.innerText = `Editor: ${fileName} (${size} bytes) [Binary Raw Hex]`;
                 contentElem.innerText = formatHexBytes(fileBytes);
             }
