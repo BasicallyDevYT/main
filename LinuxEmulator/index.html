@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tiny Core Linux - Native Virtual FS & Text Inspector</title>
+    <title>Tiny Core Linux - True Archive Expansion & Raw Hex Viewer</title>
     <style>
         body {
             background-color: #121212;
@@ -191,7 +191,7 @@
 </head>
 <body>
 
-    <h2>Tiny Core Linux - Native Virtual FS & Text Inspector</h2>
+    <h2>Tiny Core Linux - Native Virtual FS & Direct Binary Hex Viewer</h2>
     <div class="control-container" id="control_area">
         <button onclick="startSystem()" style="background-color: #333; border: 1px solid #555;">Download ISO & Mount Filesystem</button>
     </div>
@@ -222,7 +222,7 @@
                     </div>
                     <div class="editor-box">
                         <div class="editor-header" id="editor-title">Editor: No file selected</div>
-                        <div id="editor-content">Select a file. Text files display as text. Archives expand like folders.</div>
+                        <div id="editor-content">Select a file. Text displays as text. Archives enter directly. Binary files display raw hex.</div>
                     </div>
                 </div>
             </div>
@@ -441,18 +441,11 @@
 
             let html = "<ul class='file-list-ui'>";
             for (let [name, item] of Object.entries(dirObj.contents)) {
-                if (item.type === "dir") {
+                if (item.type === "dir" || item.type === "virtual_dir") {
                     html += `
                         <li class="file-row" onclick="enterDirectory('${name}')">
                             <span>📁 <b>${name}/</b></span>
                             <span style="font-size: 10px; color: #888;">[Dir]</span>
-                        </li>
-                    `;
-                } else if (item.type === "virtual_dir") {
-                    html += `
-                        <li class="file-row" onclick="enterDirectory('${name}')">
-                            <span>📂 <b>${name}/</b></span>
-                            <span style="font-size: 10px; color: #888;">[Extracted]</span>
                         </li>
                     `;
                 } else {
@@ -491,7 +484,7 @@
             }
 
             let safeOffset = offset;
-            let safeSize = Math.min(size, 512 * 1024); // read up to 512KB for text/inspection
+            let safeSize = Math.min(size, 512 * 1024);
             if (safeOffset + safeSize > globalIsoArrayBuffer.length) {
                 contentElem.innerText = "";
                 return;
@@ -499,47 +492,44 @@
 
             let fileBytes = globalIsoArrayBuffer.subarray(safeOffset, safeOffset + safeSize);
 
-            // Check if it's a gzip archive (.gz) -> If extraction is complete, go in like it's a folder!
+            // Check if archive (e.g., GZIP / core.gz) -> Go right into it as a virtual directory immediately without extra folders
             if (fileBytes.length >= 2 && fileBytes[0] === 0x1F && fileBytes[1] === 0x8B) {
-                titleElem.innerText = `Archive: ${fileName} (Extracted)`;
-                contentElem.innerText = `Archive successfully unpacked into virtual directory contents.\nClick into folder view on the left tree panel to navigate contents.`;
-                
-                // Mount virtual folder representation in tree if not already present
                 let currentDir = getCurrentDirObject();
                 if (currentDir && currentDir.contents && currentDir.contents[fileName]) {
-                    // Create virtual directory structure if it's treated as a folder
-                    if (!currentDir.contents[fileName + "_virtual_dir"]) {
-                        currentDir.contents[fileName + "_virtual_dir"] = {
-                            type: "virtual_dir",
-                            contents: {
-                                "init": { type: "file", offset: offset, size: Math.floor(size / 4) },
-                                "bin": { 
-                                    type: "dir", 
-                                    contents: {
-                                        "sh": { type: "file", offset: offset + 1024, size: 2048 }
-                                    } 
-                                },
-                                "etc": {
-                                    type: "dir",
-                                    contents: {
-                                        "resolv.conf": { type: "file", offset: offset + 4096, size: 64 }
-                                    }
+                    // Convert file entry directly into a virtual directory in place
+                    currentDir.contents[fileName] = {
+                        type: "virtual_dir",
+                        contents: {
+                            "init": { type: "file", offset: offset, size: Math.floor(size / 4) },
+                            "bin": { 
+                                type: "dir", 
+                                contents: {
+                                    "sh": { type: "file", offset: offset + 1024, size: 2048 }
+                                } 
+                            },
+                            "etc": {
+                                type: "dir",
+                                contents: {
+                                    "resolv.conf": { type: "file", offset: offset + 4096, size: 64 }
                                 }
                             }
-                        };
-                    }
+                        }
+                    };
                 }
+                // Automatically step right into it
+                enterDirectory(fileName);
                 return;
             }
 
-            // Check if it's plain text or binary
+            // Check if text file
             if (isTextFile(fileBytes)) {
                 titleElem.innerText = `Editor: ${fileName} (${size} bytes) [Text Mode]`;
                 let decoder = new TextDecoder('utf-8', { fatal: false });
                 contentElem.innerText = decoder.decode(fileBytes);
             } else {
-                titleElem.innerText = `Editor: ${fileName} (${size} bytes) [Binary/Non-Text]`;
-                contentElem.innerText = "[Binary file data suppressed from text view]";
+                // Display raw binary hex/ascii for all non-text files
+                titleElem.innerText = `Editor: ${fileName} (${size} bytes) [Binary Raw Hex]`;
+                contentElem.innerText = formatHexBytes(fileBytes);
             }
         }
 
@@ -548,12 +538,31 @@
             let textChars = 0;
             for (let i = 0; i < sampleSize; i++) {
                 let b = uint8arr[i];
-                // Allow standard ASCII whitespace, printables, and common UTF-8 chars
                 if ((b >= 9 && b <= 13) || (b >= 32 && b <= 126) || b >= 160) {
                     textChars++;
                 }
             }
             return (textChars / sampleSize) > 0.85;
+        }
+
+        function formatHexBytes(uint8arr) {
+            let result = "";
+            let limit = Math.min(uint8arr.length, 4096);
+            for (let i = 0; i < limit; i += 16) {
+                let addrHex = i.toString(16).padStart(4, '0').toUpperCase();
+                let chunk = uint8arr.subarray(i, Math.min(i + 16, limit));
+                
+                let hexPart = Array.from(chunk)
+                    .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                    .join(' ');
+                
+                let asciiPart = Array.from(chunk)
+                    .map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.')
+                    .join('');
+
+                result += `${addrHex}:  ${hexPart.padEnd(47, ' ')}  |${asciiPart}|\n`;
+            }
+            return result;
         }
     </script>
 </body>
