@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Linux GUI Emulator</title>
+    <title>Tiny Core Linux GUI Emulator</title>
     <style>
         body {
             background-color: #121212;
@@ -44,14 +44,14 @@
 </head>
 <body>
 
-    <h2>Linux GUI Emulator</h2>
+    <h2>Tiny Core Linux GUI Emulator</h2>
     <div class="control-container" id="control_area">
         <div style="margin-bottom: 10px;">
-            <button onclick="startLinuxGUI()" style="background-color: #333; border: 1px solid #555;">Start Linux with GUI</button>
+            <button onclick="startTinyCore()" style="background-color: #333; border: 1px solid #555;">Start Tiny Core GUI (FLWM Desktop)</button>
         </div>
     </div>
 
-    <div id="status-display">Click to start the lightweight Linux GUI desktop.</div>
+    <div id="status-display">Click to start the graphical environment.</div>
 
     <div id="screen_container">
         <div id="screen"></div>
@@ -61,27 +61,27 @@
     <script>
         let currentEmulator = null;
 
-        async function startLinuxGUI() {
+        async function startTinyCore() {
             const controlArea = document.getElementById("control_area");
             const statusDisplay = document.getElementById("status-display");
             
             controlArea.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">
-                    Selected: Tiny Core Linux (FLWM Desktop GUI)
+                    Selected: Tiny Core Linux GUI (FLWM Desktop)
                 </div>
                 <button onclick="location.reload()">Stop / Reset</button>
             `;
 
-            const isoUrl = 'https://distro.ibiblio.org/tinycorelinux/15.x/x86/release/TinyCore-15.0.iso';
+            const isoUrl = 'https://huggingface.co/datasets/BasicallyDev/VoidLinuxISOS/resolve/main/TinyCore-current.iso';
 
             try {
-                statusDisplay.innerText = "Checking GUI image size...";
+                statusDisplay.innerText = "Checking Tiny Core ISO file size...";
 
                 const headResponse = await fetch(isoUrl, { method: 'HEAD', mode: 'cors' }).catch(() => null);
                 const contentLength = headResponse ? headResponse.headers.get('content-length') : null;
                 const total = contentLength ? parseInt(contentLength, 10) : 23 * 1024 * 1024;
 
-                statusDisplay.innerText = "Loading lightweight GUI desktop stream...";
+                statusDisplay.innerText = "Booting Tiny Core GUI via async CD-ROM stream...";
                 await new Promise(r => setTimeout(r, 20));
 
                 currentEmulator = new V86({
@@ -100,10 +100,10 @@
                     boot_order: 0x3
                 });
 
-                statusDisplay.innerText = "Running Linux GUI";
+                statusDisplay.innerText = "Running GUI";
             } catch (err) {
                 console.error(err);
-                statusDisplay.innerText = "Error loading GUI: " + err.message;
+                statusDisplay.innerText = "Error loading ISO: " + err.message;
             }
         }
     </script>
