@@ -154,6 +154,7 @@
     <div class="checkout-card">
         <h2>Complete Purchase</h2>
         
+        <!-- User Profile Header -->
         <div class="user-profile">
             <div id="avatar-container">
                 <img id="avatar-image" src="" alt="Avatar">
@@ -164,15 +165,19 @@
             </div>
         </div>
 
+        <!-- Dynamic Price and Amount Display (250 = $0.99) -->
         <div id="price-display" class="price-box">$0.99</div>
         <div id="item-desc-display" class="item-description">250 Credits</div>
 
+        <!-- Clean textboxes -->
         <input type="text" placeholder="Card Number" />
         <input type="text" placeholder="Promo Code" />
 
+        <!-- Confirm Button -->
         <button id="pay-btn">Confirm & Pay</button>
     </div>
 
+    <!-- Success Modal Popup -->
     <div id="success-modal" class="modal-overlay">
         <div class="modal-content">
             <h3>Success!</h3>
@@ -235,7 +240,7 @@
             }
         }
 
-        // 6. Handle Modal Popup Flow & Close Action on Proceed
+        // 6. Handle Modal Popup Flow & Redirect to complete.html
         const payBtn = document.getElementById('pay-btn');
         const successModal = document.getElementById('success-modal');
         const proceedBtn = document.getElementById('proceed-btn');
@@ -245,19 +250,7 @@
         });
 
         proceedBtn.addEventListener('click', () => {
-            // Try closing the window/tab directly
-            window.close();
-            
-            // Also send a message to parent container (PenguinMod iframe) as a backup
-            window.parent.postMessage('close-checkout', '*');
-            
-            // Fallback message if the browser blocks closing
-            setTimeout(() => {
-                successModal.innerHTML = `
-                    <h3>Success!</h3>
-                    <p>You can now close this window or return to the game.</p>
-                `;
-            }, 200);
+            window.location.href = 'complete.html';
         });
     </script>
 </body>
