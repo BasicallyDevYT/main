@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f172a;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #f8fafc;
+        }
+        .checkout-card {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            background: #0f172a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+            text-align: left;
+        }
+        #avatar-container {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 12px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #475569;
+            border: 2px solid transparent;
+        }
+        #avatar-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .user-info {
+            overflow: hidden;
+        }
+        .username {
+            font-weight: 600;
+            font-size: 15px;
+            color: #f8fafc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .service-tag {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: capitalize;
+        }
+        .price-box {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 5px;
+        }
+        .item-description {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        input[type="text"]::placeholder {
+            color: #64748b;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        button {
+            width: 100%;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        /* Modal Popup Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 320px;
+            text-align: center;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            color: #22c55e;
+        }
+        .modal-content p {
+            color: #cbd5e1;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="checkout-card">
+        <h2>Complete Purchase</h2>
+        
+        <!-- User Profile Header -->
+        <div class="user-profile">
+            <div id="avatar-container">
+                <img id="avatar-image" src="" alt="Avatar">
+            </div>
+            <div class="user-info">
+                <div id="username-display" class="username">Guest</div>
+                <div id="service-display" class="service-tag">Connected</div>
+            </div>
+        </div>
+
+        <!-- Dynamic Price and Amount Display -->
+        <div id="price-display" class="price-box">$0.99</div>
+        <div id="item-desc-display" class="item-description">250 Credits</div>
+
+        <!-- Clean textboxes -->
+        <input type="text" placeholder="Card Number" />
+        <input type="text" placeholder="Promo Code" />
+
+        <!-- Confirm Button -->
+        <button id="pay-btn">Confirm & Pay</button>
+    </div>
+
+    <!-- Success Modal Popup -->
+    <div id="success-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Success!</h3>
+            <p>Your transaction has been successfully processed.</p>
+            <button id="proceed-btn">Proceed</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Read URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const service = urlParams.get('service');
+        const username = urlParams.get('username');
+        const avatarParam = urlParams.get('avatar');
+        const userId = urlParams.get('userid');
+        const amountParam = urlParams.get('amount');
+        const currencyNameParam = urlParams.get('currencyname');
+
+        // 2. Populate Username & Service
+        if (username) {
+            document.getElementById('username-display').textContent = username;
+        }
+        if (service) {
+            document.getElementById('service-display').textContent = `Logged in via ${service}`;
+        }
+
+        // 3. Handle Pricing & Custom Amount/Currency (250 = $0.99)
+        let amount = parseInt(amountParam);
+        if (isNaN(amount) || amount <= 0) {
+            amount = 250; // Default fallback amount
+        }
+
+        let currencyName = currencyNameParam ? currencyNameParam : 'Credits'; 
+
+        // Calculate price: (amount / 250) * 0.99
+        const calculatedPrice = (amount / 250) * 0.99;
+        document.getElementById('price-display').textContent = `$${calculatedPrice.toFixed(2)}`;
+        document.getElementById('item-desc-display').textContent = `${amount} ${currencyName}`;
+
+        // 4. Handle Avatar logic (If UserID exists -> Discord, otherwise direct URL)
+        const avatarElement = document.getElementById('avatar-image');
+        const avatarContainer = document.getElementById('avatar-container');
+
+        if (avatarParam) {
+            if (userId) {
+                avatarElement.src = `https://cdn.discordapp.com/avatars/${userId}/${avatarParam}.png`;
+            } else {
+                avatarElement.src = avatarParam;
+            }
+        }
+
+        // 5. Set Avatar Stroke Colors based on service
+        if (service) {
+            const normalizedService = service.toLowerCase();
+            if (normalizedService === 'google' || normalizedService === 'discord') {
+                avatarContainer.style.border = '2px solid #3b82f6'; // Blue stroke
+            } else if (normalizedService === 'github') {
+                avatarContainer.style.border = '2px solid #94a3b8'; // Gray stroke
+            } else if (normalizedService === 'soundcloud') {
+                avatarContainer.style.border = '2px solid #f97316'; // Orange stroke
+            }
+        }
+
+        // 6. Handle Modal Popup Flow
+        const payBtn = document.getElementById('pay-btn');
+        const successModal = document.getElementById('success-modal');
+        const proceedBtn = document.getElementById('proceed-btn');
+
+        payBtn.addEventListener('click', () => {
+            successModal.style.display = 'flex';
+        });
+
+        proceedBtn.addEventListener('click', () => {
+            window.location.href = 'complete.html';
+        });
+    </script>
+</body>
+</html>
