@@ -165,7 +165,7 @@
             </div>
         </div>
 
-        <!-- Dynamic Price and Amount Display (250 = $0.99) -->
+        <!-- Dynamic Price and Amount Display -->
         <div id="price-display" class="price-box">$0.99</div>
         <div id="item-desc-display" class="item-description">250 Credits</div>
 
@@ -207,16 +207,17 @@
         // 3. Handle Pricing & Custom Amount/Currency (250 = $0.99)
         let amount = parseInt(amountParam);
         if (isNaN(amount) || amount <= 0) {
-            amount = 250; 
+            amount = 250; // Default fallback amount
         }
 
         let currencyName = currencyNameParam ? currencyNameParam : 'Credits'; 
 
+        // Calculate price: (amount / 250) * 0.99
         const calculatedPrice = (amount / 250) * 0.99;
         document.getElementById('price-display').textContent = `$${calculatedPrice.toFixed(2)}`;
         document.getElementById('item-desc-display').textContent = `${amount} ${currencyName}`;
 
-        // 4. Handle Avatar logic
+        // 4. Handle Avatar logic (If UserID exists -> Discord, otherwise direct URL)
         const avatarElement = document.getElementById('avatar-image');
         const avatarContainer = document.getElementById('avatar-container');
 
@@ -240,7 +241,7 @@
             }
         }
 
-        // 6. Handle Modal Popup Flow & Redirect to complete.html
+        // 6. Handle Modal Popup Flow
         const payBtn = document.getElementById('pay-btn');
         const successModal = document.getElementById('success-modal');
         const proceedBtn = document.getElementById('proceed-btn');
