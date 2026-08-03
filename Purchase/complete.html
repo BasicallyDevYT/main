@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Closing...</title>
+</head>
+<body>
+    <script>
+        // Attempt to close the window immediately when loaded
+        window.close();
+        
+        // Fallback message just in case the browser blocks it
+        setTimeout(() => {
+            document.body.innerHTML = "<h3>You can now close this tab.</h3>";
+        }, 500);
+    </script>
+</body>
+</html>
